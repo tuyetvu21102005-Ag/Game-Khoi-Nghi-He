@@ -18,10 +18,10 @@ function App() {
   const [assignedTeam, setAssignedTeam] = useState<Team>('Hider');
   const [scale, setScale] = useState<number>(1);
 
-  // Resize handler to scale the 950x650 game bounds dynamically into the screen
+  // Resize handler to scale the game bounds dynamically into the screen
   useEffect(() => {
     const handleResize = () => {
-      const baseWidth = 950;
+      const baseWidth = currentScreen === 'game' ? 1650 : 950;
       const padding = 16; // 16px safety margins
 
       const scaleX = (window.innerWidth - padding) / baseWidth;
@@ -37,7 +37,7 @@ function App() {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, []);
+  }, [currentScreen]);
 
   // Load stats from localStorage if available
   useEffect(() => {
@@ -114,6 +114,8 @@ function App() {
     setCurrentScreen('menu');
   };
 
+  const baseWidth = currentScreen === 'game' ? 1650 : 950;
+
   return (
     <main className="app-main-viewport">
       <div
@@ -121,7 +123,7 @@ function App() {
         style={{
           transform: `scale(${scale})`,
           transformOrigin: 'center top',
-          width: '950px',
+          width: `${baseWidth}px`,
           height: '800px',
           display: 'flex',
           flexDirection: 'column',

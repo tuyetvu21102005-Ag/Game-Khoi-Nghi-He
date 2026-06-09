@@ -59,6 +59,7 @@ export interface Furniture {
   color: string;
   name: string;
   floor: number;
+  house?: number; // 1 or 2
 }
 
 export interface GameMap {

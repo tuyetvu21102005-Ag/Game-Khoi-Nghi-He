@@ -18,19 +18,30 @@ interface GameCanvasProps {
 }
 
 // Map constants
-const CANVAS_WIDTH = 900;
+const CANVAS_WIDTH = 1600; // Expanded width to fit double house side-by-side
 const CANVAS_HEIGHT = 600;
+
+// House 1 bounds
 const HOUSE_LEFT = 100;
-const HOUSE_RIGHT = 800;
-const HOUSE_WIDTH = HOUSE_RIGHT - HOUSE_LEFT;
+const HOUSE_WIDTH = 600; // Spans 100 to 700
+const HOUSE_RIGHT = HOUSE_LEFT + HOUSE_WIDTH;
+
+// House 2 bounds
+const HOUSE2_LEFT = 900;
+const HOUSE2_WIDTH = 600; // Spans 900 to 1500
+const HOUSE2_RIGHT = HOUSE2_LEFT + HOUSE2_WIDTH;
 
 const FLOOR_HEIGHTs = [540, 380, 220]; // Y coordinate of Floor 1, Floor 2, Floor 3
 const FLOOR_CEILINGS = [380, 220, 60];  // Top Y coordinate of Floor 1, Floor 2, Floor 3
 
-// Stairs X-coordinates
+// Stairs X-coordinates for both houses
 const STAIRS = [
-  { fromFloor: 1, toFloor: 2, x: 200, w: 40 },
-  { fromFloor: 2, toFloor: 3, x: 700, w: 40 },
+  // House 1 Stairs
+  { fromFloor: 1, toFloor: 2, x: 250, w: 40 },
+  { fromFloor: 2, toFloor: 3, x: 550, w: 40 },
+  // House 2 Stairs
+  { fromFloor: 1, toFloor: 2, x: 1050, w: 40 },
+  { fromFloor: 2, toFloor: 3, x: 1350, w: 40 },
 ];
 
 export const GameCanvas: React.FC<GameCanvasProps> = ({
@@ -65,71 +76,84 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const getMapData = (mapId: string): GameMap => {
     const mapMeta = MAPS.find(m => m.id === mapId) || MAPS[0];
     
-    // Generate furniture objects based on theme
-    const furniture: Furniture[] = [];
+    // Generate furniture objects based on theme for House 1
+    const furniture1: Furniture[] = [];
 
     if (mapMeta.theme === 'erangel') {
       // Floor 1 (Living Room & Kitchen)
-      furniture.push({ id: 'e_sofa', type: 'sofa', x: 150, y: 540, w: 80, h: 35, color: '#5C4033', name: 'Sofa Da', floor: 1 });
-      furniture.push({ id: 'e_tv', type: 'tv', x: 280, y: 540, w: 60, h: 45, color: '#1a1a1a', name: 'Tivi', floor: 1 });
-      furniture.push({ id: 'e_table', type: 'table', x: 450, y: 540, w: 70, h: 30, color: '#8B5A2B', name: 'Bàn Ăn', floor: 1 });
-      furniture.push({ id: 'e_fridge', type: 'fridge', x: 620, y: 540, w: 40, h: 70, color: '#C0C0C0', name: 'Tủ Lạnh', floor: 1 });
-      furniture.push({ id: 'e_plant1', type: 'plant', x: 740, y: 540, w: 25, h: 40, color: '#228B22', name: 'Chậu Cây', floor: 1 });
+      furniture1.push({ id: 'e_sofa', type: 'sofa', x: 50, y: 540, w: 80, h: 35, color: '#5C4033', name: 'Sofa Da', floor: 1 });
+      furniture1.push({ id: 'e_tv', type: 'tv', x: 160, y: 540, w: 60, h: 45, color: '#1a1a1a', name: 'Tivi', floor: 1 });
+      furniture1.push({ id: 'e_table', type: 'table', x: 260, y: 540, w: 70, h: 30, color: '#8B5A2B', name: 'Bàn Ăn', floor: 1 });
+      furniture1.push({ id: 'e_fridge', type: 'fridge', x: 400, y: 540, w: 40, h: 70, color: '#C0C0C0', name: 'Tủ Lạnh', floor: 1 });
+      furniture1.push({ id: 'e_plant1', type: 'plant', x: 500, y: 540, w: 25, h: 40, color: '#228B22', name: 'Chậu Cây', floor: 1 });
 
       // Floor 2 (Bedroom & Bathroom)
-      furniture.push({ id: 'e_bed', type: 'bed', x: 120, y: 380, w: 80, h: 40, color: '#4682B4', name: 'Giường Ngủ', floor: 2 });
-      furniture.push({ id: 'e_wardrobe', type: 'wardrobe', x: 300, y: 380, w: 50, h: 80, color: '#5C4033', name: 'Tủ Quần Áo', floor: 2 });
-      furniture.push({ id: 'e_cabinet', type: 'cabinet', x: 480, y: 380, w: 45, h: 50, color: '#CD853F', name: 'Kệ Sách', floor: 2 });
-      furniture.push({ id: 'e_plant2', type: 'plant', x: 600, y: 380, w: 25, h: 40, color: '#228B22', name: 'Chậu Cây', floor: 2 });
+      furniture1.push({ id: 'e_bed', type: 'bed', x: 60, y: 380, w: 80, h: 40, color: '#4682B4', name: 'Giường Ngủ', floor: 2 });
+      furniture1.push({ id: 'e_wardrobe', type: 'wardrobe', x: 180, y: 380, w: 50, h: 80, color: '#5C4033', name: 'Tủ Quần Áo', floor: 2 });
+      furniture1.push({ id: 'e_cabinet', type: 'cabinet', x: 320, y: 380, w: 45, h: 50, color: '#CD853F', name: 'Kệ Sách', floor: 2 });
+      furniture1.push({ id: 'e_plant2', type: 'plant', x: 480, y: 380, w: 25, h: 40, color: '#228B22', name: 'Chậu Cây', floor: 2 });
       
       // Floor 3 (Attic & Library)
-      furniture.push({ id: 'e_bookshelf1', type: 'cabinet', x: 250, y: 220, w: 60, h: 80, color: '#3d2514', name: 'Giá Sách Lớn', floor: 3 });
-      furniture.push({ id: 'e_desk', type: 'table', x: 400, y: 220, w: 65, h: 35, color: '#8B4513', name: 'Bàn Làm Việc', floor: 3 });
-      furniture.push({ id: 'e_bookshelf2', type: 'cabinet', x: 550, y: 220, w: 60, h: 80, color: '#3d2514', name: 'Giá Sách Phụ', floor: 3 });
-      furniture.push({ id: 'e_box', type: 'box', x: 150, y: 220, w: 30, h: 30, color: '#CD853F', name: 'Hòm Gỗ', floor: 3 });
+      furniture1.push({ id: 'e_bookshelf1', type: 'cabinet', x: 80, y: 220, w: 60, h: 80, color: '#3d2514', name: 'Giá Sách Lớn', floor: 3 });
+      furniture1.push({ id: 'e_desk', type: 'table', x: 200, y: 220, w: 65, h: 35, color: '#8B4513', name: 'Bàn Làm Việc', floor: 3 });
+      furniture1.push({ id: 'e_bookshelf2', type: 'cabinet', x: 350, y: 220, w: 60, h: 80, color: '#3d2514', name: 'Giá Sách Phụ', floor: 3 });
+      furniture1.push({ id: 'e_box', type: 'box', x: 480, y: 220, w: 30, h: 30, color: '#CD853F', name: 'Hòm Gỗ', floor: 3 });
     } else if (mapMeta.theme === 'miramar') {
       // Floor 1
-      furniture.push({ id: 'm_crate1', type: 'box', x: 160, y: 540, w: 35, h: 35, color: '#8E8E8E', name: 'Hòm Sắt', floor: 1 });
-      furniture.push({ id: 'm_crate2', type: 'box', x: 195, y: 540, w: 35, h: 35, color: '#708090', name: 'Hòm Sắt', floor: 1 });
-      furniture.push({ id: 'm_barrel1', type: 'box', x: 340, y: 540, w: 25, h: 40, color: '#D2691E', name: 'Thùng Phi Cam', floor: 1 });
-      furniture.push({ id: 'm_barrel2', type: 'box', x: 365, y: 540, w: 25, h: 40, color: '#A0522D', name: 'Thùng Phi Rỉ', floor: 1 });
-      furniture.push({ id: 'm_generator', type: 'fridge', x: 550, y: 540, w: 50, h: 60, color: '#555555', name: 'Máy Phát Điện', floor: 1 });
-      furniture.push({ id: 'm_table', type: 'table', x: 680, y: 540, w: 60, h: 30, color: '#7f8c8d', name: 'Bàn Sắt', floor: 1 });
+      furniture1.push({ id: 'm_crate1', type: 'box', x: 50, y: 540, w: 35, h: 35, color: '#8E8E8E', name: 'Hòm Sắt', floor: 1 });
+      furniture1.push({ id: 'm_crate2', type: 'box', x: 95, y: 540, w: 35, h: 35, color: '#708090', name: 'Hòm Sắt', floor: 1 });
+      furniture1.push({ id: 'm_barrel1', type: 'box', x: 180, y: 540, w: 25, h: 40, color: '#D2691E', name: 'Thùng Phi Cam', floor: 1 });
+      furniture1.push({ id: 'm_barrel2', type: 'box', x: 215, y: 540, w: 25, h: 40, color: '#A0522D', name: 'Thùng Phi Rỉ', floor: 1 });
+      furniture1.push({ id: 'm_generator', type: 'fridge', x: 320, y: 540, w: 50, h: 60, color: '#555555', name: 'Máy Phát Điện', floor: 1 });
+      furniture1.push({ id: 'm_table', type: 'table', x: 450, y: 540, w: 60, h: 30, color: '#7f8c8d', name: 'Bàn Sắt', floor: 1 });
 
       // Floor 2
-      furniture.push({ id: 'm_shelves', type: 'cabinet', x: 140, y: 380, w: 55, h: 75, color: '#7f8c8d', name: 'Kệ Vật Tư', floor: 2 });
-      furniture.push({ id: 'm_boxstack1', type: 'box', x: 300, y: 380, w: 40, h: 40, color: '#CD853F', name: 'Thùng Gỗ', floor: 2 });
-      furniture.push({ id: 'm_boxstack2', type: 'box', x: 335, y: 380, w: 30, h: 30, color: '#B8860B', name: 'Thùng Gỗ Nhỏ', floor: 2 });
-      furniture.push({ id: 'm_control', type: 'tv', x: 480, y: 380, w: 70, h: 45, color: '#2c3e50', name: 'Bàn Điều Khiển', floor: 2 });
-      furniture.push({ id: 'm_barrel3', type: 'box', x: 620, y: 380, w: 25, h: 40, color: '#34495e', name: 'Thùng Phi Xanh', floor: 2 });
+      furniture1.push({ id: 'm_shelves', type: 'cabinet', x: 60, y: 380, w: 55, h: 75, color: '#7f8c8d', name: 'Kệ Vật Tư', floor: 2 });
+      furniture1.push({ id: 'm_boxstack1', type: 'box', x: 180, y: 380, w: 40, h: 40, color: '#CD853F', name: 'Thùng Gỗ', floor: 2 });
+      furniture1.push({ id: 'm_boxstack2', type: 'box', x: 230, y: 380, w: 30, h: 30, color: '#B8860B', name: 'Thùng Gỗ Nhỏ', floor: 2 });
+      furniture1.push({ id: 'm_control', type: 'tv', x: 340, y: 380, w: 70, h: 45, color: '#2c3e50', name: 'Bàn Điều Khiển', floor: 2 });
+      furniture1.push({ id: 'm_barrel3', type: 'box', x: 480, y: 380, w: 25, h: 40, color: '#34495e', name: 'Thùng Phi Xanh', floor: 2 });
 
       // Floor 3
-      furniture.push({ id: 'm_crate3', type: 'box', x: 220, y: 220, w: 40, h: 40, color: '#7f8c8d', name: 'Hòm Thiết Bị', floor: 3 });
-      furniture.push({ id: 'm_locker', type: 'wardrobe', x: 380, y: 220, w: 45, h: 80, color: '#34495e', name: 'Tủ Locker', floor: 3 });
-      furniture.push({ id: 'm_pipes', type: 'table', x: 500, y: 220, w: 80, h: 30, color: '#d35400', name: 'Đống Ống Đồng', floor: 3 });
-      furniture.push({ id: 'm_box4', type: 'box', x: 650, y: 220, w: 35, h: 35, color: '#95a5a6', name: 'Hòm Nhôm', floor: 3 });
+      furniture1.push({ id: 'm_crate3', type: 'box', x: 80, y: 220, w: 40, h: 40, color: '#7f8c8d', name: 'Hòm Thiết Bị', floor: 3 });
+      furniture1.push({ id: 'm_locker', type: 'wardrobe', x: 180, y: 220, w: 45, h: 80, color: '#34495e', name: 'Tủ Locker', floor: 3 });
+      furniture1.push({ id: 'm_pipes', type: 'table', x: 300, y: 220, w: 80, h: 30, color: '#d35400', name: 'Đống Ống Đồng', floor: 3 });
+      furniture1.push({ id: 'm_box4', type: 'box', x: 460, y: 220, w: 35, h: 35, color: '#95a5a6', name: 'Hòm Nhôm', floor: 3 });
     } else {
       // Sanhok (Ancient ruins theme)
       // Floor 1
-      furniture.push({ id: 's_altar', type: 'sofa', x: 150, y: 540, w: 90, h: 40, color: '#2d3e2f', name: 'Bệ Thờ Đá Mossy', floor: 1 });
-      furniture.push({ id: 's_chest1', type: 'box', x: 320, y: 540, w: 35, h: 30, color: '#8B5A2B', name: 'Rương Cổ Gỗ', floor: 1 });
-      furniture.push({ id: 's_pillar1', type: 'wardrobe', x: 460, y: 540, w: 30, h: 90, color: '#555855', name: 'Trụ Đá Đổ Nát', floor: 1 });
-      furniture.push({ id: 's_bush1', type: 'plant', x: 600, y: 540, w: 45, h: 50, color: '#1e5e2f', name: 'Bụi Cây Nhiệt Đới', floor: 1 });
-      furniture.push({ id: 's_urn', type: 'plant', x: 720, y: 540, w: 25, h: 40, color: '#7f8c8d', name: 'Bình Gốm Cổ', floor: 1 });
+      furniture1.push({ id: 's_altar', type: 'sofa', x: 50, y: 540, w: 90, h: 40, color: '#2d3e2f', name: 'Bệ Thờ Đá Mossy', floor: 1 });
+      furniture1.push({ id: 's_chest1', type: 'box', x: 180, y: 540, w: 35, h: 30, color: '#8B5A2B', name: 'Rương Cổ Gỗ', floor: 1 });
+      furniture1.push({ id: 's_pillar1', type: 'wardrobe', x: 270, y: 540, w: 30, h: 90, color: '#555855', name: 'Trụ Đá Đổ Nát', floor: 1 });
+      furniture1.push({ id: 's_bush1', type: 'plant', x: 360, y: 540, w: 45, h: 50, color: '#1e5e2f', name: 'Bụi Cây Nhiệt Đới', floor: 1 });
+      furniture1.push({ id: 's_urn', type: 'plant', x: 480, y: 540, w: 25, h: 40, color: '#7f8c8d', name: 'Bình Gốm Cổ', floor: 1 });
 
       // Floor 2
-      furniture.push({ id: 's_sarcophagus', type: 'bed', x: 130, y: 380, w: 80, h: 35, color: '#7f8c8d', name: 'Quan Tài Đá', floor: 2 });
-      furniture.push({ id: 's_bush2', type: 'plant', x: 280, y: 380, w: 45, h: 50, color: '#1e5e2f', name: 'Bụi Cây', floor: 2 });
-      furniture.push({ id: 's_chest2', type: 'box', x: 420, y: 380, w: 40, h: 35, color: '#d4af37', name: 'Rương Vàng Cổ', floor: 2 });
-      furniture.push({ id: 's_pillar2', type: 'wardrobe', x: 560, y: 380, w: 30, h: 90, color: '#555855', name: 'Trụ Đá', floor: 2 });
-      furniture.push({ id: 's_bush3', type: 'plant', x: 670, y: 380, w: 40, h: 45, color: '#1e5e2f', name: 'Cây Dương Xỉ', floor: 2 });
+      furniture1.push({ id: 's_sarcophagus', type: 'bed', x: 60, y: 380, w: 80, h: 35, color: '#7f8c8d', name: 'Quan Tài Đá', floor: 2 });
+      furniture1.push({ id: 's_bush2', type: 'plant', x: 180, y: 380, w: 45, h: 50, color: '#1e5e2f', name: 'Bụi Cây', floor: 2 });
+      furniture1.push({ id: 's_chest2', type: 'box', x: 280, y: 380, w: 40, h: 35, color: '#d4af37', name: 'Rương Vàng Cổ', floor: 2 });
+      furniture1.push({ id: 's_pillar2', type: 'wardrobe', x: 380, y: 380, w: 30, h: 90, color: '#555855', name: 'Trụ Đá', floor: 2 });
+      furniture1.push({ id: 's_bush3', type: 'plant', x: 480, y: 380, w: 40, h: 45, color: '#1e5e2f', name: 'Cây Dương Xỉ', floor: 2 });
 
       // Floor 3
-      furniture.push({ id: 's_torch', type: 'plant', x: 180, y: 220, w: 20, h: 60, color: '#b22222', name: 'Đuốc Đá', floor: 3 });
-      furniture.push({ id: 's_boulder', type: 'sofa', x: 300, y: 220, w: 70, h: 45, color: '#3d4f3d', name: 'Tảng Đá Rêu', floor: 3 });
-      furniture.push({ id: 's_chest3', type: 'box', x: 470, y: 220, w: 35, h: 30, color: '#8b5a2b', name: 'Rương Gỗ', floor: 3 });
-      furniture.push({ id: 's_statue', type: 'wardrobe', x: 600, y: 220, w: 35, h: 80, color: '#7f8c8d', name: 'Tượng Thần Đá', floor: 3 });
+      furniture1.push({ id: 's_torch', type: 'plant', x: 80, y: 220, w: 20, h: 60, color: '#b22222', name: 'Đuốc Đá', floor: 3 });
+      furniture1.push({ id: 's_boulder', type: 'sofa', x: 160, y: 220, w: 70, h: 45, color: '#3d4f3d', name: 'Tảng Đá Rêu', floor: 3 });
+      furniture1.push({ id: 's_chest3', type: 'box', x: 300, y: 220, w: 35, h: 30, color: '#8b5a2b', name: 'Rương Gỗ', floor: 3 });
+      furniture1.push({ id: 's_statue', type: 'wardrobe', x: 420, y: 220, w: 35, h: 80, color: '#7f8c8d', name: 'Tượng Thần Đá', floor: 3 });
     }
+
+    // Set house 1 attribute for all House 1 items
+    furniture1.forEach(f => f.house = 1);
+
+    // Duplicate all furniture items for House 2
+    const furniture2 = furniture1.map(f => ({
+      ...f,
+      id: `${f.id}_h2`,
+      house: 2,
+      name: `${f.name} (Nhà 2)`
+    }));
+
+    const furniture = [...furniture1, ...furniture2];
 
     return {
       id: mapMeta.id,
@@ -190,11 +214,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const aiHidersToSpawn = playerIsHider ? totalHidersCount - 1 : totalHidersCount;
     for (let i = 0; i < aiHidersToSpawn; i++) {
       const startFloor = Math.floor(Math.random() * 3) + 1; // Floor 1, 2, or 3
+      const useHouse2 = Math.random() > 0.5;
+      const xBase = useHouse2 ? HOUSE2_LEFT : HOUSE_LEFT;
+      const widthLimit = useHouse2 ? HOUSE2_WIDTH : HOUSE_WIDTH;
       players.push({
         id: `hider_ai_${i}`,
         name: `Hider AI #${i + 1}`,
         team: 'Hider',
-        x: HOUSE_LEFT + 50 + Math.random() * (HOUSE_WIDTH - 100),
+        x: xBase + 50 + Math.random() * (widthLimit - 100),
         y: FLOOR_HEIGHTs[startFloor - 1] - 30,
         vx: 0,
         vy: 0,
@@ -368,7 +395,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     activeMap.furniture.forEach(item => {
       if (item.floor !== user.floor) return;
-      const furnitureX = HOUSE_LEFT + item.x;
+      const xBase = item.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT;
+      const furnitureX = xBase + item.x;
       const furnitureY = item.y;
       
       const dx = Math.abs((user.x + user.width / 2) - (furnitureX + item.w / 2));
@@ -609,7 +637,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         // Boundary checks inside house structure
         // If Seeker, can wander outside left/right. If Hider, must stay in house or balconies
         const leftLimit = p.team === 'Seeker' ? 20 : HOUSE_LEFT;
-        const rightLimit = p.team === 'Seeker' ? CANVAS_WIDTH - 20 : HOUSE_RIGHT + 50; // allow balcony on right
+        const rightLimit = p.team === 'Seeker' ? CANVAS_WIDTH - 20 : HOUSE2_RIGHT + 50; // allow balcony on right of House 2
 
         if (p.x < leftLimit) p.x = leftLimit;
         if (p.x + p.width > rightLimit) p.x = rightLimit - p.width;
@@ -685,14 +713,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                   // Cheat teleport/path for AI floor transition during hide phase
                   p.floor = newFloor;
                   p.y = FLOOR_HEIGHTs[newFloor - 1] - p.height;
-                  p.x = HOUSE_LEFT + 50 + Math.random() * (HOUSE_WIDTH - 100);
+                  p.x = HOUSE_LEFT + 50 + Math.random() * (HOUSE2_RIGHT - HOUSE_LEFT - 100);
                 }
               }
 
               if (p.aiTargetFurnitureId) {
                 const targetFurn = activeMap.furniture.find(f => f.id === p.aiTargetFurnitureId);
                 if (targetFurn) {
-                  const targetX = HOUSE_LEFT + targetFurn.x + targetFurn.w / 2 - p.width / 2;
+                  const xBase = targetFurn.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT;
+                  const targetX = xBase + targetFurn.x + targetFurn.w / 2 - p.width / 2;
                   const dx = targetX - p.x;
 
                   if (Math.abs(dx) > 5) {
@@ -721,14 +750,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 p.x = HOUSE_LEFT;
                 p.direction = 1;
               }
-              if (p.x + p.width > HOUSE_RIGHT) {
-                p.x = HOUSE_RIGHT - p.width;
+              if (p.x + p.width > HOUSE2_RIGHT) {
+                p.x = HOUSE2_RIGHT - p.width;
                 p.direction = -1;
               }
 
               // Randomly try to blend in again
               if (Math.random() < 0.01) {
-                const nearFurn = activeMap.furniture.find(f => f.floor === p.floor && Math.abs(f.x + HOUSE_LEFT - p.x) < 80);
+                const nearFurn = activeMap.furniture.find(f => {
+                  if (f.floor !== p.floor) return false;
+                  const xBase = f.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT;
+                  return Math.abs(xBase + f.x - p.x) < 80;
+                });
                 if (nearFurn) {
                   p.isCamo = true;
                   p.targetColor = nearFurn.color;
@@ -803,8 +836,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 p.x = HOUSE_LEFT - 30;
                 p.direction = 1;
               }
-              if (p.x + p.width > HOUSE_RIGHT + 50) {
-                p.x = HOUSE_RIGHT + 50 - p.width;
+              if (p.x + p.width > HOUSE2_RIGHT + 50) {
+                p.x = HOUSE2_RIGHT + 50 - p.width;
                 p.direction = -1;
               }
 
@@ -916,7 +949,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               let overlappingMatchedFurniture = false;
               activeMap.furniture.forEach(item => {
                 if (item.floor === p.floor) {
-                  const furnX = HOUSE_LEFT + item.x;
+                  const xBase = item.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT;
+                  const furnX = xBase + item.x;
                   if (p.x >= furnX - 5 && p.x + p.width <= furnX + item.w + 5) {
                     if (p.targetColor === item.color) {
                       overlappingMatchedFurniture = true;
@@ -1011,26 +1045,31 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.fillStyle = activeMap.theme === 'erangel' ? '#27ae60' : activeMap.theme === 'miramar' ? '#d35400' : '#16a085';
     ctx.fillRect(0, 540, CANVAS_WIDTH, 60);
 
-    // 3. Draw 3-Story House structure
-    // Draw outer building frame
+    // 3. Draw 3-Story House structures
+    // Draw outer building frames
     ctx.lineWidth = 8;
     ctx.strokeStyle = activeMap.wallColor;
-    ctx.strokeRect(HOUSE_LEFT, 60, HOUSE_WIDTH, 480);
+    ctx.strokeRect(HOUSE_LEFT, 60, HOUSE_WIDTH, 480);   // House 1
+    ctx.strokeRect(HOUSE2_LEFT, 60, HOUSE2_WIDTH, 480); // House 2
 
-    // Draw background wallpaper for each floor
+    // Draw background wallpaper & floor lines for each floor of both houses
     FLOOR_HEIGHTs.forEach((floorY, idx) => {
       const ceilingY = FLOOR_CEILINGS[idx];
       const floorH = floorY - ceilingY;
+
       ctx.fillStyle = activeMap.backgroundColor;
-      ctx.fillRect(HOUSE_LEFT + 4, ceilingY + 4, HOUSE_WIDTH - 8, floorH - 8);
+      ctx.fillRect(HOUSE_LEFT + 4, ceilingY + 4, HOUSE_WIDTH - 8, floorH - 8);   // House 1
+      ctx.fillRect(HOUSE2_LEFT + 4, ceilingY + 4, HOUSE2_WIDTH - 8, floorH - 8); // House 2
 
       // Draw floor lines
       ctx.fillStyle = activeMap.floorColor;
-      ctx.fillRect(HOUSE_LEFT, floorY - 4, HOUSE_WIDTH, 8);
+      ctx.fillRect(HOUSE_LEFT, floorY - 4, HOUSE_WIDTH, 8);   // House 1
+      ctx.fillRect(HOUSE2_LEFT, floorY - 4, HOUSE2_WIDTH, 8); // House 2
     });
 
-    // Draw roof triangular cap
+    // Draw roof triangular caps
     ctx.fillStyle = '#b22222';
+    // House 1 Roof
     ctx.beginPath();
     ctx.moveTo(HOUSE_LEFT - 10, 60);
     ctx.lineTo(HOUSE_LEFT + HOUSE_WIDTH / 2, 10);
@@ -1038,7 +1077,62 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.closePath();
     ctx.fill();
 
-    // Draw Stairs/Ladders connecting floors
+    // House 2 Roof
+    ctx.beginPath();
+    ctx.moveTo(HOUSE2_LEFT - 10, 60);
+    ctx.lineTo(HOUSE2_LEFT + HOUSE2_WIDTH / 2, 10);
+    ctx.lineTo(HOUSE2_RIGHT + 10, 60);
+    ctx.closePath();
+    ctx.fill();
+
+    // Draw connecting bridges between the two houses
+    // Bridge at Floor 2 (Y = 380)
+    ctx.strokeStyle = '#34495e';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(HOUSE_RIGHT, 380);
+    ctx.lineTo(HOUSE2_LEFT, 380);
+    ctx.stroke();
+
+    // Handrail Floor 2
+    ctx.strokeStyle = '#7f8c8d';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(HOUSE_RIGHT, 350);
+    ctx.lineTo(HOUSE2_LEFT, 350);
+    ctx.stroke();
+    // vertical posts
+    for (let bx = HOUSE_RIGHT + 25; bx < HOUSE2_LEFT; bx += 30) {
+      ctx.beginPath();
+      ctx.moveTo(bx, 380);
+      ctx.lineTo(bx, 350);
+      ctx.stroke();
+    }
+
+    // Bridge at Floor 3 (Y = 220)
+    ctx.strokeStyle = '#34495e';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(HOUSE_RIGHT, 220);
+    ctx.lineTo(HOUSE2_LEFT, 220);
+    ctx.stroke();
+
+    // Handrail Floor 3
+    ctx.strokeStyle = '#7f8c8d';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(HOUSE_RIGHT, 190);
+    ctx.lineTo(HOUSE2_LEFT, 190);
+    ctx.stroke();
+    // vertical posts
+    for (let bx = HOUSE_RIGHT + 25; bx < HOUSE2_LEFT; bx += 30) {
+      ctx.beginPath();
+      ctx.moveTo(bx, 220);
+      ctx.lineTo(bx, 190);
+      ctx.stroke();
+    }
+
+    // Draw Stairs/Ladders connecting floors (automatically loops both houses)
     ctx.strokeStyle = '#ffffff66';
     ctx.lineWidth = 4;
     STAIRS.forEach(stair => {
@@ -1062,18 +1156,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.stroke();
     });
 
-    // Draw balcony rail
+    // Draw balcony rail on House 2 right side
     ctx.strokeStyle = '#c0c0c0';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(HOUSE_RIGHT, FLOOR_HEIGHTs[1] - 25);
-    ctx.lineTo(HOUSE_RIGHT + 50, FLOOR_HEIGHTs[1] - 25);
-    ctx.lineTo(HOUSE_RIGHT + 50, FLOOR_HEIGHTs[1]);
+    ctx.moveTo(HOUSE2_RIGHT, FLOOR_HEIGHTs[1] - 25);
+    ctx.lineTo(HOUSE2_RIGHT + 50, FLOOR_HEIGHTs[1] - 25);
+    ctx.lineTo(HOUSE2_RIGHT + 50, FLOOR_HEIGHTs[1]);
     ctx.stroke();
 
     // 4. Draw Furniture Objects
     activeMap.furniture.forEach(item => {
-      const x = HOUSE_LEFT + item.x;
+      const x = (item.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT) + item.x;
       const y = item.y - item.h;
 
       ctx.fillStyle = item.color;
