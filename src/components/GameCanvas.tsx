@@ -18,7 +18,7 @@ interface GameCanvasProps {
 }
 
 // Map constants
-const CANVAS_WIDTH = 1600; // Expanded width to fit double house side-by-side
+const CANVAS_WIDTH = 2400; // Expanded width to fit triple house side-by-side
 const CANVAS_HEIGHT = 600;
 
 // House 1 bounds
@@ -31,17 +31,28 @@ const HOUSE2_LEFT = 900;
 const HOUSE2_WIDTH = 600; // Spans 900 to 1500
 const HOUSE2_RIGHT = HOUSE2_LEFT + HOUSE2_WIDTH;
 
-const FLOOR_HEIGHTs = [540, 380, 220]; // Y coordinate of Floor 1, Floor 2, Floor 3
-const FLOOR_CEILINGS = [380, 220, 60];  // Top Y coordinate of Floor 1, Floor 2, Floor 3
+// House 3 bounds
+const HOUSE3_LEFT = 1700;
+const HOUSE3_WIDTH = 600; // Spans 1700 to 2300
+const HOUSE3_RIGHT = HOUSE3_LEFT + HOUSE3_WIDTH;
 
-// Stairs X-coordinates for both houses
+const FLOOR_HEIGHTs = [540, 420, 300, 180]; // Y coordinate of Floor 1, Floor 2, Floor 3, Floor 4
+const FLOOR_CEILINGS = [420, 300, 180, 60];  // Top Y coordinate of Floor 1, Floor 2, Floor 3, Floor 4
+
+// Stairs X-coordinates for all three houses
 const STAIRS = [
   // House 1 Stairs
   { fromFloor: 1, toFloor: 2, x: 250, w: 40 },
   { fromFloor: 2, toFloor: 3, x: 550, w: 40 },
+  { fromFloor: 3, toFloor: 4, x: 250, w: 40 },
   // House 2 Stairs
-  { fromFloor: 1, toFloor: 2, x: 1050, w: 40 },
-  { fromFloor: 2, toFloor: 3, x: 1350, w: 40 },
+  { fromFloor: 1, toFloor: 2, x: 980, w: 40 },
+  { fromFloor: 2, toFloor: 3, x: 1420, w: 40 },
+  { fromFloor: 3, toFloor: 4, x: 980, w: 40 },
+  // House 3 Stairs
+  { fromFloor: 1, toFloor: 2, x: 1850, w: 40 },
+  { fromFloor: 2, toFloor: 3, x: 2150, w: 40 },
+  { fromFloor: 3, toFloor: 4, x: 1850, w: 40 },
 ];
 
 export const GameCanvas: React.FC<GameCanvasProps> = ({
@@ -67,6 +78,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const mousePos = useRef({ x: 0, y: 0 });
   const activeSkinData = ALL_SKINS.find(s => s.id === activeSkinId) || ALL_SKINS[0];
 
+  // Elevator State
+  const elevatorRef = useRef({
+    x: 1200,
+    w: 50,
+    y: 540, // bottom Y coordinate of cabin
+    floor: 1,
+    targetFloor: 1,
+    state: 'waiting' as 'waiting' | 'moving',
+    waitTimer: 180, // 3 seconds at 60fps
+    direction: 1, // 1 = going up, -1 = going down
+    speed: 2.2, // pixels per frame
+  });
+
   const [selectedColor, setSelectedColor] = useState<string>('#ffffff');
   const [seekerAmmo, setSeekerAmmo] = useState<number>(30);
   const [isReloading, setIsReloading] = useState<boolean>(false);
@@ -88,16 +112,22 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       furniture1.push({ id: 'e_plant1', type: 'plant', x: 500, y: 540, w: 25, h: 40, color: '#228B22', name: 'Chậu Cây', floor: 1 });
 
       // Floor 2 (Bedroom & Bathroom)
-      furniture1.push({ id: 'e_bed', type: 'bed', x: 60, y: 380, w: 80, h: 40, color: '#4682B4', name: 'Giường Ngủ', floor: 2 });
-      furniture1.push({ id: 'e_wardrobe', type: 'wardrobe', x: 180, y: 380, w: 50, h: 80, color: '#5C4033', name: 'Tủ Quần Áo', floor: 2 });
-      furniture1.push({ id: 'e_cabinet', type: 'cabinet', x: 320, y: 380, w: 45, h: 50, color: '#CD853F', name: 'Kệ Sách', floor: 2 });
-      furniture1.push({ id: 'e_plant2', type: 'plant', x: 480, y: 380, w: 25, h: 40, color: '#228B22', name: 'Chậu Cây', floor: 2 });
+      furniture1.push({ id: 'e_bed', type: 'bed', x: 60, y: 420, w: 80, h: 40, color: '#4682B4', name: 'Giường Ngủ', floor: 2 });
+      furniture1.push({ id: 'e_wardrobe', type: 'wardrobe', x: 180, y: 420, w: 50, h: 80, color: '#5C4033', name: 'Tủ Quần Áo', floor: 2 });
+      furniture1.push({ id: 'e_cabinet', type: 'cabinet', x: 320, y: 420, w: 45, h: 50, color: '#CD853F', name: 'Kệ Sách', floor: 2 });
+      furniture1.push({ id: 'e_plant2', type: 'plant', x: 480, y: 420, w: 25, h: 40, color: '#228B22', name: 'Chậu Cây', floor: 2 });
       
       // Floor 3 (Attic & Library)
-      furniture1.push({ id: 'e_bookshelf1', type: 'cabinet', x: 80, y: 220, w: 60, h: 80, color: '#3d2514', name: 'Giá Sách Lớn', floor: 3 });
-      furniture1.push({ id: 'e_desk', type: 'table', x: 200, y: 220, w: 65, h: 35, color: '#8B4513', name: 'Bàn Làm Việc', floor: 3 });
-      furniture1.push({ id: 'e_bookshelf2', type: 'cabinet', x: 350, y: 220, w: 60, h: 80, color: '#3d2514', name: 'Giá Sách Phụ', floor: 3 });
-      furniture1.push({ id: 'e_box', type: 'box', x: 480, y: 220, w: 30, h: 30, color: '#CD853F', name: 'Hòm Gỗ', floor: 3 });
+      furniture1.push({ id: 'e_bookshelf1', type: 'cabinet', x: 80, y: 300, w: 60, h: 80, color: '#3d2514', name: 'Giá Sách Lớn', floor: 3 });
+      furniture1.push({ id: 'e_desk', type: 'table', x: 200, y: 300, w: 65, h: 35, color: '#8B4513', name: 'Bàn Làm Việc', floor: 3 });
+      furniture1.push({ id: 'e_bookshelf2', type: 'cabinet', x: 350, y: 300, w: 60, h: 80, color: '#3d2514', name: 'Giá Sách Phụ', floor: 3 });
+      furniture1.push({ id: 'e_box', type: 'box', x: 480, y: 300, w: 30, h: 30, color: '#CD853F', name: 'Hòm Gỗ', floor: 3 });
+
+      // Floor 4 (Lab & Office)
+      furniture1.push({ id: 'e_pc', type: 'tv', x: 80, y: 180, w: 50, h: 40, color: '#111111', name: 'Màn Máy Tính', floor: 4 });
+      furniture1.push({ id: 'e_officedesk', type: 'table', x: 180, y: 180, w: 70, h: 30, color: '#8B5A2B', name: 'Bàn Học', floor: 4 });
+      furniture1.push({ id: 'e_filecab', type: 'cabinet', x: 300, y: 180, w: 50, h: 70, color: '#3d2514', name: 'Tủ Hồ Sơ', floor: 4 });
+      furniture1.push({ id: 'e_plant3', type: 'plant', x: 450, y: 180, w: 25, h: 40, color: '#228B22', name: 'Chậu Cây Cảnh', floor: 4 });
     } else if (mapMeta.theme === 'miramar') {
       // Floor 1
       furniture1.push({ id: 'm_crate1', type: 'box', x: 50, y: 540, w: 35, h: 35, color: '#8E8E8E', name: 'Hòm Sắt', floor: 1 });
@@ -108,17 +138,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       furniture1.push({ id: 'm_table', type: 'table', x: 450, y: 540, w: 60, h: 30, color: '#7f8c8d', name: 'Bàn Sắt', floor: 1 });
 
       // Floor 2
-      furniture1.push({ id: 'm_shelves', type: 'cabinet', x: 60, y: 380, w: 55, h: 75, color: '#7f8c8d', name: 'Kệ Vật Tư', floor: 2 });
-      furniture1.push({ id: 'm_boxstack1', type: 'box', x: 180, y: 380, w: 40, h: 40, color: '#CD853F', name: 'Thùng Gỗ', floor: 2 });
-      furniture1.push({ id: 'm_boxstack2', type: 'box', x: 230, y: 380, w: 30, h: 30, color: '#B8860B', name: 'Thùng Gỗ Nhỏ', floor: 2 });
-      furniture1.push({ id: 'm_control', type: 'tv', x: 340, y: 380, w: 70, h: 45, color: '#2c3e50', name: 'Bàn Điều Khiển', floor: 2 });
-      furniture1.push({ id: 'm_barrel3', type: 'box', x: 480, y: 380, w: 25, h: 40, color: '#34495e', name: 'Thùng Phi Xanh', floor: 2 });
+      furniture1.push({ id: 'm_shelves', type: 'cabinet', x: 60, y: 420, w: 55, h: 75, color: '#7f8c8d', name: 'Kệ Vật Tư', floor: 2 });
+      furniture1.push({ id: 'm_boxstack1', type: 'box', x: 180, y: 420, w: 40, h: 40, color: '#CD853F', name: 'Thùng Gỗ', floor: 2 });
+      furniture1.push({ id: 'm_boxstack2', type: 'box', x: 230, y: 420, w: 30, h: 30, color: '#B8860B', name: 'Thùng Gỗ Nhỏ', floor: 2 });
+      furniture1.push({ id: 'm_control', type: 'tv', x: 340, y: 420, w: 70, h: 45, color: '#2c3e50', name: 'Bàn Điều Khiển', floor: 2 });
+      furniture1.push({ id: 'm_barrel3', type: 'box', x: 480, y: 420, w: 25, h: 40, color: '#34495e', name: 'Thùng Phi Xanh', floor: 2 });
 
       // Floor 3
-      furniture1.push({ id: 'm_crate3', type: 'box', x: 80, y: 220, w: 40, h: 40, color: '#7f8c8d', name: 'Hòm Thiết Bị', floor: 3 });
-      furniture1.push({ id: 'm_locker', type: 'wardrobe', x: 180, y: 220, w: 45, h: 80, color: '#34495e', name: 'Tủ Locker', floor: 3 });
-      furniture1.push({ id: 'm_pipes', type: 'table', x: 300, y: 220, w: 80, h: 30, color: '#d35400', name: 'Đống Ống Đồng', floor: 3 });
-      furniture1.push({ id: 'm_box4', type: 'box', x: 460, y: 220, w: 35, h: 35, color: '#95a5a6', name: 'Hòm Nhôm', floor: 3 });
+      furniture1.push({ id: 'm_crate3', type: 'box', x: 80, y: 300, w: 40, h: 40, color: '#7f8c8d', name: 'Hòm Thiết Bị', floor: 3 });
+      furniture1.push({ id: 'm_locker', type: 'wardrobe', x: 180, y: 300, w: 45, h: 80, color: '#34495e', name: 'Tủ Locker', floor: 3 });
+      furniture1.push({ id: 'm_pipes', type: 'table', x: 300, y: 300, w: 80, h: 30, color: '#d35400', name: 'Đống Ống Đồng', floor: 3 });
+      furniture1.push({ id: 'm_box4', type: 'box', x: 460, y: 300, w: 35, h: 35, color: '#95a5a6', name: 'Hòm Nhôm', floor: 3 });
+
+      // Floor 4
+      furniture1.push({ id: 'm_ammocrate', type: 'box', x: 80, y: 180, w: 35, h: 35, color: '#8E8E8E', name: 'Hòm Đạn Dược', floor: 4 });
+      furniture1.push({ id: 'm_locker2', type: 'wardrobe', x: 180, y: 180, w: 45, h: 70, color: '#34495e', name: 'Tủ Vật Tư', floor: 4 });
+      furniture1.push({ id: 'm_barrel4', type: 'box', x: 320, y: 180, w: 30, h: 40, color: '#A0522D', name: 'Thùng Phi Rỉ', floor: 4 });
+      furniture1.push({ id: 'm_box5', type: 'box', x: 440, y: 180, w: 35, h: 35, color: '#95a5a6', name: 'Hòm Nhôm', floor: 4 });
     } else {
       // Sanhok (Ancient ruins theme)
       // Floor 1
@@ -129,17 +165,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       furniture1.push({ id: 's_urn', type: 'plant', x: 480, y: 540, w: 25, h: 40, color: '#7f8c8d', name: 'Bình Gốm Cổ', floor: 1 });
 
       // Floor 2
-      furniture1.push({ id: 's_sarcophagus', type: 'bed', x: 60, y: 380, w: 80, h: 35, color: '#7f8c8d', name: 'Quan Tài Đá', floor: 2 });
-      furniture1.push({ id: 's_bush2', type: 'plant', x: 180, y: 380, w: 45, h: 50, color: '#1e5e2f', name: 'Bụi Cây', floor: 2 });
-      furniture1.push({ id: 's_chest2', type: 'box', x: 280, y: 380, w: 40, h: 35, color: '#d4af37', name: 'Rương Vàng Cổ', floor: 2 });
-      furniture1.push({ id: 's_pillar2', type: 'wardrobe', x: 380, y: 380, w: 30, h: 90, color: '#555855', name: 'Trụ Đá', floor: 2 });
-      furniture1.push({ id: 's_bush3', type: 'plant', x: 480, y: 380, w: 40, h: 45, color: '#1e5e2f', name: 'Cây Dương Xỉ', floor: 2 });
+      furniture1.push({ id: 's_sarcophagus', type: 'bed', x: 60, y: 420, w: 80, h: 35, color: '#7f8c8d', name: 'Quan Tài Đá', floor: 2 });
+      furniture1.push({ id: 's_bush2', type: 'plant', x: 180, y: 420, w: 45, h: 50, color: '#1e5e2f', name: 'Bụi Cây', floor: 2 });
+      furniture1.push({ id: 's_chest2', type: 'box', x: 280, y: 420, w: 40, h: 35, color: '#d4af37', name: 'Rương Vàng Cổ', floor: 2 });
+      furniture1.push({ id: 's_pillar2', type: 'wardrobe', x: 380, y: 420, w: 30, h: 90, color: '#555855', name: 'Trụ Đá', floor: 2 });
+      furniture1.push({ id: 's_bush3', type: 'plant', x: 480, y: 420, w: 40, h: 45, color: '#1e5e2f', name: 'Cây Dương Xỉ', floor: 2 });
 
       // Floor 3
-      furniture1.push({ id: 's_torch', type: 'plant', x: 80, y: 220, w: 20, h: 60, color: '#b22222', name: 'Đuốc Đá', floor: 3 });
-      furniture1.push({ id: 's_boulder', type: 'sofa', x: 160, y: 220, w: 70, h: 45, color: '#3d4f3d', name: 'Tảng Đá Rêu', floor: 3 });
-      furniture1.push({ id: 's_chest3', type: 'box', x: 300, y: 220, w: 35, h: 30, color: '#8b5a2b', name: 'Rương Gỗ', floor: 3 });
-      furniture1.push({ id: 's_statue', type: 'wardrobe', x: 420, y: 220, w: 35, h: 80, color: '#7f8c8d', name: 'Tượng Thần Đá', floor: 3 });
+      furniture1.push({ id: 's_torch', type: 'plant', x: 80, y: 300, w: 20, h: 60, color: '#b22222', name: 'Đuốc Đá', floor: 3 });
+      furniture1.push({ id: 's_boulder', type: 'sofa', x: 160, y: 300, w: 70, h: 45, color: '#3d4f3d', name: 'Tảng Đá Rêu', floor: 3 });
+      furniture1.push({ id: 's_chest3', type: 'box', x: 300, y: 300, w: 35, h: 30, color: '#8b5a2b', name: 'Rương Gỗ', floor: 3 });
+      furniture1.push({ id: 's_statue', type: 'wardrobe', x: 420, y: 300, w: 35, h: 80, color: '#7f8c8d', name: 'Tượng Thần Đá', floor: 3 });
+
+      // Floor 4
+      furniture1.push({ id: 's_torch2', type: 'plant', x: 80, y: 180, w: 20, h: 60, color: '#b22222', name: 'Đuốc Cổ', floor: 4 });
+      furniture1.push({ id: 's_chest4', type: 'box', x: 180, y: 180, w: 40, h: 35, color: '#d4af37', name: 'Rương Cổ', floor: 4 });
+      furniture1.push({ id: 's_boulder2', type: 'sofa', x: 300, y: 180, w: 70, h: 45, color: '#3d4f3d', name: 'Tảng Đá Lớn', floor: 4 });
+      furniture1.push({ id: 's_statue2', type: 'wardrobe', x: 420, y: 180, w: 35, h: 80, color: '#7f8c8d', name: 'Tượng Cổ', floor: 4 });
     }
 
     // Set house 1 attribute for all House 1 items
@@ -153,7 +195,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       name: `${f.name} (Nhà 2)`
     }));
 
-    const furniture = [...furniture1, ...furniture2];
+    // Duplicate all furniture items for House 3
+    const furniture3 = furniture1.map(f => ({
+      ...f,
+      id: `${f.id}_h3`,
+      house: 3,
+      name: `${f.name} (Nhà 3)`
+    }));
+
+    const furniture = [...furniture1, ...furniture2, ...furniture3];
 
     return {
       id: mapMeta.id,
@@ -213,10 +263,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const totalHidersCount = 20;
     const aiHidersToSpawn = playerIsHider ? totalHidersCount - 1 : totalHidersCount;
     for (let i = 0; i < aiHidersToSpawn; i++) {
-      const startFloor = Math.floor(Math.random() * 3) + 1; // Floor 1, 2, or 3
-      const useHouse2 = Math.random() > 0.5;
-      const xBase = useHouse2 ? HOUSE2_LEFT : HOUSE_LEFT;
-      const widthLimit = useHouse2 ? HOUSE2_WIDTH : HOUSE_WIDTH;
+      const startFloor = Math.floor(Math.random() * 4) + 1; // Floor 1, 2, 3, or 4
+      const randHouse = Math.floor(Math.random() * 3) + 1; // House 1, 2, or 3
+      const xBase = randHouse === 3 ? HOUSE3_LEFT : (randHouse === 2 ? HOUSE2_LEFT : HOUSE_LEFT);
+      const widthLimit = randHouse === 3 ? HOUSE3_WIDTH : (randHouse === 2 ? HOUSE2_WIDTH : HOUSE_WIDTH);
       players.push({
         id: `hider_ai_${i}`,
         name: `Hider AI #${i + 1}`,
@@ -400,7 +450,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     activeMap.furniture.forEach(item => {
       if (item.floor !== user.floor) return;
-      const xBase = item.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT;
+      const xBase = item.house === 3 ? HOUSE3_LEFT : (item.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT);
       const furnitureX = xBase + item.x;
       const furnitureY = item.y;
       
@@ -547,7 +597,36 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       console.log('[GameCanvas] Physics update loop active. Players:', players.length, 'Active Keys:', JSON.stringify(keysPressed.current));
     }
 
-
+    // 0. Update Elevator Cabin Movement
+    const elevator = elevatorRef.current;
+    if (elevator.state === 'waiting') {
+      elevator.waitTimer -= 1;
+      if (elevator.waitTimer <= 0) {
+        if (elevator.floor === 1) {
+          elevator.direction = 1;
+          elevator.targetFloor = 2;
+          elevator.state = 'moving';
+        } else if (elevator.floor === 4) {
+          elevator.direction = -1;
+          elevator.targetFloor = 3;
+          elevator.state = 'moving';
+        } else {
+          elevator.targetFloor = elevator.floor + elevator.direction;
+          elevator.state = 'moving';
+        }
+      }
+    } else if (elevator.state === 'moving') {
+      const targetY = FLOOR_HEIGHTs[elevator.targetFloor - 1];
+      const diffY = targetY - elevator.y;
+      if (Math.abs(diffY) > elevator.speed) {
+        elevator.y += Math.sign(diffY) * elevator.speed;
+      } else {
+        elevator.y = targetY;
+        elevator.floor = elevator.targetFloor;
+        elevator.state = 'waiting';
+        elevator.waitTimer = 180; // 3 seconds wait time
+      }
+    }
 
     // 1. Update Player Movement
     players.forEach(p => {
@@ -590,95 +669,83 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           p.isCamo = false; // Break camo on move
         }
 
-        // Climbing Stairs Logic
-        let onStair = false;
-        let targetStair = STAIRS[0];
+        // Check if player is riding the elevator
+        const isInsideElevatorX = p.x + p.width / 2 >= elevator.x - 23 && p.x + p.width / 2 <= elevator.x + 23;
+        const isStandingOnCabinFloor = Math.abs((p.y + p.height) - elevator.y) < 15;
+        const isRidingElevator = isInsideElevatorX && isStandingOnCabinFloor;
 
-        STAIRS.forEach(stair => {
-          // Check horizontal proximity to stair center
-          if (p.x + p.width/2 >= stair.x - 15 && p.x + p.width/2 <= stair.x + 15) {
-            // Check if player is on either the fromFloor or toFloor
-            if (p.floor === stair.fromFloor || p.floor === stair.toFloor) {
-              onStair = true;
-              targetStair = stair;
+        if (!isRidingElevator) {
+          // Climbing Stairs Logic
+          let onStair = false;
+          let targetStair = STAIRS[0];
+
+          STAIRS.forEach(stair => {
+            if (p.x + p.width/2 >= stair.x - 15 && p.x + p.width/2 <= stair.x + 15) {
+              if (p.floor === stair.fromFloor || p.floor === stair.toFloor) {
+                onStair = true;
+                targetStair = stair;
+              }
             }
-          }
-        });
+          });
 
-        const goUp = keysPressed.current['w'] || 
-                     keysPressed.current['arrowup'] || 
-                     keysPressed.current['keyw'] || 
-                     keysPressed.current['up'];
-                     
-        const goDown = keysPressed.current['s'] || 
-                       keysPressed.current['arrowdown'] || 
-                       keysPressed.current['keys'] || 
-                       keysPressed.current['down'];
+          const goUp = keysPressed.current['w'] || 
+                       keysPressed.current['arrowup'] || 
+                       keysPressed.current['keyw'] || 
+                       keysPressed.current['up'];
+                       
+          const goDown = keysPressed.current['s'] || 
+                         keysPressed.current['arrowdown'] || 
+                         keysPressed.current['keys'] || 
+                         keysPressed.current['down'];
 
-        if (onStair) {
-          if (goUp) {
-            if (p.floor === targetStair.fromFloor) {
-              // Climb up
-              p.vy = -3;
-              p.isCamo = false;
-            }
-          } else if (goDown) {
-            if (p.floor === targetStair.toFloor) {
-              // Climb down
-              p.vy = 3;
-              p.isCamo = false;
+          if (onStair) {
+            if (goUp) {
+              if (p.floor === targetStair.fromFloor) {
+                p.vy = -3;
+                p.isCamo = false;
+              }
+            } else if (goDown) {
+              if (p.floor === targetStair.toFloor) {
+                p.vy = 3;
+                p.isCamo = false;
+              }
+            } else {
+              p.vy = 0;
             }
           } else {
             p.vy = 0;
+          }
+
+          p.y += p.vy;
+
+          // Clamp vertically to floor lines if not climbing
+          const currentFloorIndex = p.floor - 1;
+          const floorY = FLOOR_HEIGHTs[currentFloorIndex];
+
+          if (p.vy > 0) {
+            // Climbing down
+            if (p.y + p.height >= FLOOR_HEIGHTs[p.floor - 2]) {
+              p.y = FLOOR_HEIGHTs[p.floor - 2] - p.height;
+              p.floor = p.floor - 1;
+              p.vy = 0;
+            }
+          } else if (p.vy < 0) {
+            // Climbing up
+            if (p.y <= FLOOR_HEIGHTs[p.floor]) {
+              p.y = FLOOR_HEIGHTs[p.floor] - p.height;
+              p.floor = p.floor + 1;
+              p.vy = 0;
+            }
+          } else {
+            // Standing on floor
+            p.y = floorY - p.height;
           }
         } else {
           p.vy = 0;
         }
 
-        // Apply velocities
+        // Apply horizontal velocities
         p.x += p.vx;
-        p.y += p.vy;
-
-        // Boundary checks inside house structure based on floor level
-        let leftLimit = HOUSE_LEFT;
-        let rightLimit = HOUSE2_RIGHT;
-
-        if (p.floor === 1) {
-          leftLimit = p.team === 'Seeker' ? 20 : HOUSE_LEFT;
-          rightLimit = p.team === 'Seeker' ? CANVAS_WIDTH - 20 : HOUSE2_RIGHT + 50;
-        } else if (p.floor === 2) {
-          leftLimit = HOUSE_LEFT;
-          rightLimit = HOUSE2_RIGHT + 50; // Balcony on Floor 2 right side
-        } else if (p.floor === 3) {
-          leftLimit = HOUSE_LEFT;
-          rightLimit = HOUSE2_RIGHT;
-        }
-
-        if (p.x < leftLimit) p.x = leftLimit;
-        if (p.x + p.width > rightLimit) p.x = rightLimit - p.width;
-
-        // Clamp vertically to floor lines if not climbing
-        const currentFloorIndex = p.floor - 1;
-        const floorY = FLOOR_HEIGHTs[currentFloorIndex];
-
-        if (p.vy > 0) {
-          // Climbing down
-          if (p.y + p.height >= FLOOR_HEIGHTs[p.floor - 2]) {
-            p.y = FLOOR_HEIGHTs[p.floor - 2] - p.height;
-            p.floor = p.floor - 1;
-            p.vy = 0;
-          }
-        } else if (p.vy < 0) {
-          // Climbing up
-          if (p.y <= FLOOR_HEIGHTs[p.floor]) {
-            p.y = FLOOR_HEIGHTs[p.floor] - p.height;
-            p.floor = p.floor + 1;
-            p.vy = 0;
-          }
-        } else {
-          // Standing on floor
-          p.y = floorY - p.height;
-        }
 
         // Camouflage blending animation
         if (p.isCamo && p.camoProgress < 1) {
@@ -735,7 +802,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               if (p.aiTargetFurnitureId) {
                 const targetFurn = activeMap.furniture.find(f => f.id === p.aiTargetFurnitureId);
                 if (targetFurn) {
-                  const xBase = targetFurn.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT;
+                  const xBase = targetFurn.house === 3 ? HOUSE3_LEFT : (targetFurn.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT);
                   const targetX = xBase + targetFurn.x + targetFurn.w / 2 - p.width / 2;
                   const dx = targetX - p.x;
 
@@ -774,7 +841,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               if (Math.random() < 0.01) {
                 const nearFurn = activeMap.furniture.find(f => {
                   if (f.floor !== p.floor) return false;
-                  const xBase = f.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT;
+                  const xBase = f.house === 3 ? HOUSE3_LEFT : (f.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT);
                   return Math.abs(xBase + f.x - p.x) < 80;
                 });
                 if (nearFurn) {
@@ -1017,7 +1084,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                     const sameFloorFurn = activeMap.furniture.filter(f => f.floor === p.floor);
                     if (sameFloorFurn.length > 0) {
                       const targetFurn = sameFloorFurn[Math.floor(Math.random() * sameFloorFurn.length)];
-                      const xBase = targetFurn.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT;
+                      const xBase = targetFurn.house === 3 ? HOUSE3_LEFT : (targetFurn.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT);
                       p.seekerState = 'investigate';
                       p.investigateTargetX = xBase + targetFurn.x + targetFurn.w / 2;
                     }
@@ -1027,6 +1094,83 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             }
           }
         }
+      }
+
+      // Unified Post-Movement Elevator Ride-Along & Shaft door collision
+      const isInsideElevatorX = p.x + p.width / 2 >= elevator.x - 23 && p.x + p.width / 2 <= elevator.x + 23;
+      const isStandingOnCabinFloor = Math.abs((p.y + p.height) - elevator.y) < 15;
+      const isRidingElevator = isInsideElevatorX && isStandingOnCabinFloor;
+
+      if (isRidingElevator) {
+        p.y = elevator.y - p.height;
+        p.vy = 0;
+        p.isCamo = false;
+        const closestFloorIndex = FLOOR_HEIGHTs.findIndex(fh => Math.abs(elevator.y - fh) < 60);
+        if (closestFloorIndex !== -1) {
+          p.floor = closestFloorIndex + 1;
+        }
+      } else if (p.isAI) {
+        // If not riding elevator, clamp AI bot Y to their current floor height
+        const floorY = FLOOR_HEIGHTs[p.floor - 1];
+        p.y = floorY - p.height;
+      }
+
+      // Shaft door wall collisions
+      const shaftLeft = elevator.x - 25;
+      const shaftRight = elevator.x + 25;
+      const isElevatorAccessible = elevator.state === 'waiting' && p.floor === elevator.floor;
+      
+      if (!isElevatorAccessible) {
+        const prevX = p.x - p.vx;
+        const centerPrevX = prevX + p.width / 2;
+        const centerCurrX = p.x + p.width / 2;
+        
+        if (centerPrevX < shaftLeft && centerCurrX >= shaftLeft) {
+          p.x = shaftLeft - p.width;
+          p.vx = 0;
+          if (p.isAI) p.direction = -p.direction as 1 | -1;
+        } else if (centerPrevX > shaftRight && centerCurrX <= shaftRight) {
+          p.x = shaftRight;
+          p.vx = 0;
+          if (p.isAI) p.direction = -p.direction as 1 | -1;
+        } else if (centerPrevX >= shaftLeft && centerPrevX <= shaftRight) {
+          if (centerCurrX < shaftLeft) {
+            p.x = shaftLeft;
+            p.vx = 0;
+            if (p.isAI) p.direction = 1;
+          } else if (centerCurrX > shaftRight) {
+            p.x = shaftRight - p.width;
+            p.vx = 0;
+            if (p.isAI) p.direction = -1;
+          }
+        }
+      }
+
+      // Horizontal boundaries clamping based on floor level
+      let leftLimit = HOUSE_LEFT;
+      let rightLimit = HOUSE3_RIGHT;
+
+      if (p.floor === 1) {
+        leftLimit = p.team === 'Seeker' ? 20 : HOUSE_LEFT;
+        rightLimit = p.team === 'Seeker' ? CANVAS_WIDTH - 20 : HOUSE3_RIGHT + 50;
+      } else if (p.floor === 2) {
+        leftLimit = HOUSE_LEFT;
+        rightLimit = HOUSE3_RIGHT + 50; // Balcony
+      } else if (p.floor === 3) {
+        leftLimit = HOUSE_LEFT;
+        rightLimit = HOUSE3_RIGHT;
+      } else if (p.floor === 4) {
+        leftLimit = HOUSE_LEFT;
+        rightLimit = HOUSE3_RIGHT;
+      }
+
+      if (p.x < leftLimit) {
+        p.x = leftLimit;
+        if (p.isAI) p.direction = 1;
+      }
+      if (p.x + p.width > rightLimit) {
+        p.x = rightLimit - p.width;
+        if (p.isAI) p.direction = -1;
       }
     });
 
@@ -1140,7 +1284,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               let overlappingMatchedFurniture = false;
               activeMap.furniture.forEach(item => {
                 if (item.floor === p.floor) {
-                  const xBase = item.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT;
+                  const xBase = item.house === 3 ? HOUSE3_LEFT : (item.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT);
                   const furnX = xBase + item.x;
                   if (p.x >= furnX - 5 && p.x + p.width <= furnX + item.w + 5) {
                     if (p.targetColor === item.color) {
@@ -1220,6 +1364,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const elevator = elevatorRef.current;
+
     // During the hide phase, Seeker player sees absolutely nothing (solid black canvas)
     if (isHidePhase && playerTeam === 'Seeker') {
       ctx.fillStyle = '#000000';
@@ -1241,14 +1387,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.fillStyle = activeMap.theme === 'erangel' ? '#27ae60' : activeMap.theme === 'miramar' ? '#d35400' : '#16a085';
     ctx.fillRect(0, 540, CANVAS_WIDTH, 60);
 
-    // 3. Draw 3-Story House structures
+    // 3. Draw 4-Story House structures
     // Draw outer building frames
     ctx.lineWidth = 8;
     ctx.strokeStyle = activeMap.wallColor;
     ctx.strokeRect(HOUSE_LEFT, 60, HOUSE_WIDTH, 480);   // House 1
     ctx.strokeRect(HOUSE2_LEFT, 60, HOUSE2_WIDTH, 480); // House 2
+    ctx.strokeRect(HOUSE3_LEFT, 60, HOUSE3_WIDTH, 480); // House 3
 
-    // Draw background wallpaper & floor lines for each floor of both houses
+    // Draw background wallpaper & floor lines for each floor of the three houses
     FLOOR_HEIGHTs.forEach((floorY, idx) => {
       const ceilingY = FLOOR_CEILINGS[idx];
       const floorH = floorY - ceilingY;
@@ -1256,12 +1403,50 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.fillStyle = activeMap.backgroundColor;
       ctx.fillRect(HOUSE_LEFT + 4, ceilingY + 4, HOUSE_WIDTH - 8, floorH - 8);   // House 1
       ctx.fillRect(HOUSE2_LEFT + 4, ceilingY + 4, HOUSE2_WIDTH - 8, floorH - 8); // House 2
+      ctx.fillRect(HOUSE3_LEFT + 4, ceilingY + 4, HOUSE3_WIDTH - 8, floorH - 8); // House 3
 
       // Draw floor lines
       ctx.fillStyle = activeMap.floorColor;
       ctx.fillRect(HOUSE_LEFT, floorY - 4, HOUSE_WIDTH, 8);   // House 1
-      ctx.fillRect(HOUSE2_LEFT, floorY - 4, HOUSE2_WIDTH, 8); // House 2
+      
+      // House 2 floor lines are split by the elevator shaft (X = 1175 to 1225)
+      ctx.fillRect(HOUSE2_LEFT, floorY - 4, 1175 - HOUSE2_LEFT, 8);
+      ctx.fillRect(1225, floorY - 4, HOUSE2_RIGHT - 1225, 8);
+
+      ctx.fillRect(HOUSE3_LEFT, floorY - 4, HOUSE3_WIDTH, 8); // House 3
     });
+
+    // Draw vertical elevator shaft walls in House 2 (X = 1175 and X = 1225)
+    ctx.strokeStyle = '#2c3e50';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(1175, 60);
+    ctx.lineTo(1175, 540);
+    ctx.moveTo(1225, 60);
+    ctx.lineTo(1225, 540);
+    ctx.stroke();
+
+    // Draw elevator cables
+    ctx.strokeStyle = '#7f8c8d';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(1200, 60);
+    ctx.lineTo(1200, elevator.y - 60); // stops at the top of the cabin
+    ctx.stroke();
+
+    // Draw elevator cabin (a glowing metallic frame cage)
+    ctx.fillStyle = 'rgba(52, 73, 94, 0.6)'; // cabin background
+    ctx.fillRect(1176, elevator.y - 60, 48, 56);
+    
+    ctx.strokeStyle = '#00ffff'; // cyan neon frame for cabin
+    ctx.lineWidth = 3;
+    ctx.strokeRect(1176, elevator.y - 60, 48, 56);
+
+    // Draw glowing cabin indicator light
+    ctx.fillStyle = elevator.state === 'waiting' ? '#2ecc71' : '#e74c3c'; // green if waiting, red if moving
+    ctx.beginPath();
+    ctx.arc(1200, elevator.y - 52, 4, 0, Math.PI * 2);
+    ctx.fill();
 
     // Draw roof triangular caps
     ctx.fillStyle = '#b22222';
@@ -1281,89 +1466,60 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.closePath();
     ctx.fill();
 
-    // Draw connecting bridges between the two houses
-    // Bridge at Floor 2 (Y = 380)
-    ctx.strokeStyle = '#34495e';
-    ctx.lineWidth = 6;
+    // House 3 Roof
     ctx.beginPath();
-    ctx.moveTo(HOUSE_RIGHT, 380);
-    ctx.lineTo(HOUSE2_LEFT, 380);
-    ctx.stroke();
+    ctx.moveTo(HOUSE3_LEFT - 10, 60);
+    ctx.lineTo(HOUSE3_LEFT + HOUSE3_WIDTH / 2, 10);
+    ctx.lineTo(HOUSE3_RIGHT + 10, 60);
+    ctx.closePath();
+    ctx.fill();
 
-    // Handrail Floor 2
-    ctx.strokeStyle = '#7f8c8d';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(HOUSE_RIGHT, 350);
-    ctx.lineTo(HOUSE2_LEFT, 350);
-    ctx.stroke();
-    // vertical posts
-    for (let bx = HOUSE_RIGHT + 25; bx < HOUSE2_LEFT; bx += 30) {
+    // Helper function to draw a bridge
+    const drawBridge = (fromX: number, toX: number, bridgeY: number) => {
+      // Main bridge beam
+      ctx.strokeStyle = '#34495e';
+      ctx.lineWidth = 6;
       ctx.beginPath();
-      ctx.moveTo(bx, 380);
-      ctx.lineTo(bx, 350);
+      ctx.moveTo(fromX, bridgeY);
+      ctx.lineTo(toX, bridgeY);
       ctx.stroke();
-    }
 
-    // Bridge at Floor 3 (Y = 220)
-    ctx.strokeStyle = '#34495e';
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.moveTo(HOUSE_RIGHT, 220);
-    ctx.lineTo(HOUSE2_LEFT, 220);
-    ctx.stroke();
-
-    // Handrail Floor 3
-    ctx.strokeStyle = '#7f8c8d';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(HOUSE_RIGHT, 190);
-    ctx.lineTo(HOUSE2_LEFT, 190);
-    ctx.stroke();
-    // vertical posts
-    for (let bx = HOUSE_RIGHT + 25; bx < HOUSE2_LEFT; bx += 30) {
+      // Handrail
+      ctx.strokeStyle = '#7f8c8d';
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(bx, 220);
-      ctx.lineTo(bx, 190);
+      ctx.moveTo(fromX, bridgeY - 30);
+      ctx.lineTo(toX, bridgeY - 30);
       ctx.stroke();
-    }
-
-    // Draw Stairs/Ladders connecting floors (automatically loops both houses)
-    ctx.strokeStyle = '#ffffff66';
-    ctx.lineWidth = 4;
-    STAIRS.forEach(stair => {
-      const startY = FLOOR_HEIGHTs[stair.fromFloor - 1] - 4;
-      const endY = FLOOR_HEIGHTs[stair.toFloor - 1] - 4;
       
-      // Draw ladder sides
-      ctx.beginPath();
-      ctx.moveTo(stair.x - 10, startY);
-      ctx.lineTo(stair.x - 10, endY);
-      ctx.moveTo(stair.x + 10, startY);
-      ctx.lineTo(stair.x + 10, endY);
-      ctx.stroke();
-
-      // Draw rungs
-      ctx.beginPath();
-      for (let y = startY; y >= endY; y -= 16) {
-        ctx.moveTo(stair.x - 10, y);
-        ctx.lineTo(stair.x + 10, y);
+      // vertical posts
+      for (let bx = fromX + 25; bx < toX; bx += 30) {
+        ctx.beginPath();
+        ctx.moveTo(bx, bridgeY);
+        ctx.lineTo(bx, bridgeY - 30);
+        ctx.stroke();
       }
-      ctx.stroke();
+    };
+
+    // Draw bridges for Floor 2, 3, and 4
+    const bridgeYLevels = [420, 300, 180];
+    bridgeYLevels.forEach(by => {
+      drawBridge(HOUSE_RIGHT, HOUSE2_LEFT, by);
+      drawBridge(HOUSE2_RIGHT, HOUSE3_LEFT, by);
     });
 
-    // Draw balcony rail on House 2 right side
+    // Draw balcony rail on House 3 right side (Floor 2 Y = 420)
     ctx.strokeStyle = '#c0c0c0';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(HOUSE2_RIGHT, FLOOR_HEIGHTs[1] - 25);
-    ctx.lineTo(HOUSE2_RIGHT + 50, FLOOR_HEIGHTs[1] - 25);
-    ctx.lineTo(HOUSE2_RIGHT + 50, FLOOR_HEIGHTs[1]);
+    ctx.moveTo(HOUSE3_RIGHT, FLOOR_HEIGHTs[1] - 25);
+    ctx.lineTo(HOUSE3_RIGHT + 50, FLOOR_HEIGHTs[1] - 25);
+    ctx.lineTo(HOUSE3_RIGHT + 50, FLOOR_HEIGHTs[1]);
     ctx.stroke();
 
     // 4. Draw Furniture Objects
     activeMap.furniture.forEach(item => {
-      const x = (item.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT) + item.x;
+      const x = (item.house === 3 ? HOUSE3_LEFT : (item.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT)) + item.x;
       const y = item.y - item.h;
 
       ctx.fillStyle = item.color;

@@ -754,7 +754,7 @@ body {
 /* ======================================================== */
 
 .game-screen-container {
-  width: 1650px;
+  width: 2450px;
   height: 800px;
   display: flex;
   flex-direction: column;
@@ -928,7 +928,7 @@ body {
 
 .canvas-wrapper {
   position: relative;
-  width: 1600px;
+  width: 2400px;
   height: 600px;
   background: #000;
   border-radius: 12px;

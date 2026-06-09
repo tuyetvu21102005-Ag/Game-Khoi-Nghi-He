@@ -21,7 +21,7 @@ function App() {
   // Resize handler to scale the game bounds dynamically into the screen
   useEffect(() => {
     const handleResize = () => {
-      const baseWidth = currentScreen === 'game' ? 1650 : 950;
+      const baseWidth = currentScreen === 'game' ? 2450 : 950;
       const padding = 16; // 16px safety margins
 
       const scaleX = (window.innerWidth - padding) / baseWidth;
@@ -114,7 +114,7 @@ function App() {
     setCurrentScreen('menu');
   };
 
-  const baseWidth = currentScreen === 'game' ? 1650 : 950;
+  const baseWidth = currentScreen === 'game' ? 2450 : 950;
 
   return (
     <main className="app-main-viewport">
