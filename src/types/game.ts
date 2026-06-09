@@ -36,6 +36,13 @@ export interface Player {
   aiWaitTimer: number;
   aiTargetFurnitureId: string | null;
   aiScanTimer: number;
+
+  // Advanced Seeker AI properties
+  seekerState?: 'patrol' | 'investigate' | 'pursue';
+  pursuitTargetId?: string | null;
+  pursuitTimer?: number;
+  investigateTargetX?: number | null;
+  targetFloor?: number | null;
 }
 
 export type FurnitureType =

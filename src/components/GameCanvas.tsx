@@ -284,6 +284,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         aiWaitTimer: 20, // Wait for 20s hiding phase
         aiTargetFurnitureId: null,
         aiScanTimer: 0,
+        seekerState: 'patrol',
+        pursuitTargetId: null,
+        pursuitTimer: 0,
+        investigateTargetX: null,
+        targetFloor: null,
       });
     }
 
@@ -792,82 +797,232 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             p.floor = 1;
             p.isCamo = false;
           } else {
-            // Action phase: Patrolling the building
+            // Action phase: Patrolling, investigating, or pursuing
             p.vx = 0;
             p.vy = 0;
-            
-            if (p.aiWaitTimer > 0) {
-              // AI Wait/Scan State
-              p.aiWaitTimer -= 0.016;
+
+            // Initialize state machine properties if they are missing
+            if (!p.seekerState) p.seekerState = 'patrol';
+            if (p.pursuitTargetId === undefined) p.pursuitTargetId = null;
+            if (p.pursuitTimer === undefined) p.pursuitTimer = 0;
+            if (p.investigateTargetX === undefined) p.investigateTargetX = null;
+            if (p.targetFloor === undefined) p.targetFloor = null;
+
+            // Periodic scans for Hiders (every 15 frames ~ 250ms)
+            p.aiScanTimer += 1;
+            if (p.aiScanTimer >= 15) {
+              p.aiScanTimer = 0;
+              scanForHiders(p);
+            }
+
+            // Decrement timers
+            if (p.aiWaitTimer > 0) p.aiWaitTimer -= 0.016;
+            if (p.pursuitTimer > 0) p.pursuitTimer -= 0.016;
+
+            // Helper to get nearest stair leading towards a target floor
+            const getNearestStairToFloor = (currentX: number, currentFloor: number, targetF: number) => {
+              let nearestS: { fromFloor: number; toFloor: number; x: number; w: number } | null = null;
+              let minDist = Infinity;
               
-              // Aim gun while waiting
-              p.gunAngle = p.direction === 1 ? 0 : Math.PI;
-
-              // Periodic Hider scans
-              p.aiScanTimer += 1;
-              if (p.aiScanTimer >= 30) { // scan twice a second
-                p.aiScanTimer = 0;
-                scanForHiders(p);
-              }
-            } else {
-              // Decide next destination
-              // Stochastically decide to switch floor or move horizontally
-              if (Math.random() < 0.005) {
-                // Decision to climb stairs if near one
-                let nearStair = false;
-                let stairObj = STAIRS[0];
-
-                STAIRS.forEach(s => {
-                  if (Math.abs(p.x + p.width/2 - s.x) < 25) {
-                    if (p.floor === s.fromFloor || p.floor === s.toFloor) {
-                      nearStair = true;
-                      stairObj = s;
-                    }
+              const dir = targetF > currentFloor ? 1 : -1;
+              for (let i = 0; i < STAIRS.length; i++) {
+                const s = STAIRS[i];
+                // Must connect current floor to next floor in target direction
+                if (s.fromFloor === currentFloor && s.toFloor === currentFloor + dir) {
+                  const dist = Math.abs(currentX - s.x);
+                  if (dist < minDist) {
+                    minDist = dist;
+                    nearestS = s;
                   }
-                });
+                } else if (s.toFloor === currentFloor && s.fromFloor === currentFloor + dir) {
+                  const dist = Math.abs(currentX - s.x);
+                  if (dist < minDist) {
+                    minDist = dist;
+                    nearestS = s;
+                  }
+                }
+              }
+              return nearestS;
+            };
 
-                if (nearStair) {
-                  // Climb floor!
-                  const targetFloor = p.floor === stairObj.fromFloor ? stairObj.toFloor : stairObj.fromFloor;
-                  p.floor = targetFloor;
-                  p.y = FLOOR_HEIGHTs[targetFloor - 1] - p.height;
-                  p.aiWaitTimer = 1.0; // rest after climbing
-                  return;
+            // State Actions
+            if (p.seekerState === 'pursue' && p.pursuitTargetId) {
+              // ==========================================
+              // PURSUIT STATE
+              // ==========================================
+              const target = players.find(h => h.id === p.pursuitTargetId && h.state !== 'eliminated');
+              
+              if (!target || p.pursuitTimer <= 0) {
+                p.seekerState = 'patrol';
+                p.pursuitTargetId = null;
+                p.targetFloor = null;
+                p.aiWaitTimer = 1.0;
+                return;
+              }
+
+              // Periodically shoot at target hider during pursuit
+              if (Math.random() < 0.04 && !p.isReloading && target.floor === p.floor) {
+                const startX = p.x + (p.direction === 1 ? p.width : 0);
+                const startY = p.y + 12;
+                const targetX = target.x + target.width / 2;
+                const targetY = target.y + target.height / 2;
+                p.gunAngle = Math.atan2(targetY - startY, targetX - startX);
+                p.direction = targetX > p.x ? 1 : -1;
+                
+                playGunshot();
+                bulletsRef.current.push({
+                  id: Math.random().toString(),
+                  startX,
+                  startY,
+                  x: startX,
+                  y: startY,
+                  vx: Math.cos(p.gunAngle) * 18,
+                  vy: Math.sin(p.gunAngle) * 18,
+                  floor: p.floor,
+                  life: 40,
+                });
+              }
+
+              // Floor traversal navigation
+              if (target.floor !== p.floor) {
+                const stair = getNearestStairToFloor(p.x + p.width / 2, p.floor, target.floor);
+                if (stair) {
+                  const dx = stair.x - (p.x + p.width / 2);
+                  if (Math.abs(dx) > 15) {
+                    p.vx = Math.sign(dx) * 2.5; // Chase speed
+                    p.direction = p.vx > 0 ? 1 : -1;
+                    p.x += p.vx;
+                  } else {
+                    const nextFloor = p.floor === stair.fromFloor ? stair.toFloor : stair.fromFloor;
+                    p.floor = nextFloor;
+                    p.y = FLOOR_HEIGHTs[nextFloor - 1] - p.height;
+                    p.aiWaitTimer = 0.5;
+                  }
+                } else {
+                  p.seekerState = 'patrol';
+                  p.pursuitTargetId = null;
+                }
+              } else {
+                // Same floor tracking
+                const dx = target.x - p.x;
+                if (Math.abs(dx) > 40) {
+                  p.vx = Math.sign(dx) * 2.5;
+                  p.direction = p.vx > 0 ? 1 : -1;
+                  p.x += p.vx;
+                } else {
+                  p.direction = dx > 0 ? 1 : -1;
+                  p.gunAngle = dx > 0 ? 0 : Math.PI;
                 }
               }
 
-              // Normal patrol walking
-              const speed = 2.0;
-              p.vx = p.direction * speed;
-              p.x += p.vx;
+            } else if (p.seekerState === 'investigate' && p.investigateTargetX !== null) {
+              // ==========================================
+              // INVESTIGATE (BLIND FIRING) STATE
+              // ==========================================
+              const dx = p.investigateTargetX - (p.x + p.width / 2);
+              if (Math.abs(dx) > 20) {
+                p.vx = Math.sign(dx) * 1.8;
+                p.direction = p.vx > 0 ? 1 : -1;
+                p.x += p.vx;
+              } else {
+                p.direction = dx > 0 ? 1 : -1;
+                p.gunAngle = p.direction === 1 ? 0 : Math.PI;
 
-              // Border boundaries bounce based on floor level
-              let minX = HOUSE_LEFT - 30;
-              let maxX = HOUSE2_RIGHT + 50;
+                // Fire blind/test shot at suspected furniture
+                const startX = p.x + (p.direction === 1 ? p.width : 0);
+                const startY = p.y + 12;
+                playGunshot();
+                bulletsRef.current.push({
+                  id: Math.random().toString(),
+                  startX,
+                  startY,
+                  x: startX,
+                  y: startY,
+                  vx: p.direction * 18,
+                  vy: 0,
+                  floor: p.floor,
+                  life: 40,
+                });
 
-              if (p.floor === 1) {
-                minX = HOUSE_LEFT - 30;
-                maxX = HOUSE2_RIGHT + 50;
-              } else if (p.floor === 2) {
-                minX = HOUSE_LEFT;
-                maxX = HOUSE2_RIGHT + 50; // Balcony
-              } else if (p.floor === 3) {
-                minX = HOUSE_LEFT;
-                maxX = HOUSE2_RIGHT;
+                p.seekerState = 'patrol';
+                p.investigateTargetX = null;
+                p.aiWaitTimer = 1.0;
               }
 
-              if (p.x < minX) {
-                p.x = minX;
-                p.direction = 1;
-              }
-              if (p.x + p.width > maxX) {
-                p.x = maxX - p.width;
-                p.direction = -1;
+            } else {
+              // ==========================================
+              // PATROL STATE
+              // ==========================================
+              // Stochastic floor change check
+              if (p.targetFloor === null && Math.random() < 0.003) {
+                const availableFloors = [1, 2, 3].filter(f => f !== p.floor);
+                p.targetFloor = availableFloors[Math.floor(Math.random() * availableFloors.length)];
               }
 
-              // Randomly pause and scan
-              if (Math.random() < 0.01) {
-                p.aiWaitTimer = 1.0 + Math.random() * 2.0;
+              if (p.targetFloor !== null) {
+                const stair = getNearestStairToFloor(p.x + p.width / 2, p.floor, p.targetFloor);
+                if (stair) {
+                  const dx = stair.x - (p.x + p.width / 2);
+                  if (Math.abs(dx) > 15) {
+                    p.vx = Math.sign(dx) * 2.0;
+                    p.direction = p.vx > 0 ? 1 : -1;
+                    p.x += p.vx;
+                  } else {
+                    const nextFloor = p.floor === stair.fromFloor ? stair.toFloor : stair.fromFloor;
+                    p.floor = nextFloor;
+                    p.y = FLOOR_HEIGHTs[nextFloor - 1] - p.height;
+                    p.aiWaitTimer = 1.0;
+                    if (p.floor === p.targetFloor) {
+                      p.targetFloor = null;
+                    }
+                  }
+                } else {
+                  p.targetFloor = null;
+                }
+              } else {
+                if (p.aiWaitTimer <= 0) {
+                  const speed = 2.0;
+                  p.vx = p.direction * speed;
+                  p.x += p.vx;
+
+                  let minX = HOUSE_LEFT - 30;
+                  let maxX = HOUSE2_RIGHT + 50;
+
+                  if (p.floor === 1) {
+                    minX = HOUSE_LEFT - 30;
+                    maxX = HOUSE2_RIGHT + 50;
+                  } else if (p.floor === 2) {
+                    minX = HOUSE_LEFT;
+                    maxX = HOUSE2_RIGHT + 50;
+                  } else if (p.floor === 3) {
+                    minX = HOUSE_LEFT;
+                    maxX = HOUSE2_RIGHT;
+                  }
+
+                  if (p.x < minX) {
+                    p.x = minX;
+                    p.direction = 1;
+                  }
+                  if (p.x + p.width > maxX) {
+                    p.x = maxX - p.width;
+                    p.direction = -1;
+                  }
+
+                  if (Math.random() < 0.01) {
+                    p.aiWaitTimer = 1.0 + Math.random() * 2.0;
+                  }
+
+                  // Deciding to investigate a suspicious piece of furniture
+                  if (Math.random() < 0.012) {
+                    const sameFloorFurn = activeMap.furniture.filter(f => f.floor === p.floor);
+                    if (sameFloorFurn.length > 0) {
+                      const targetFurn = sameFloorFurn[Math.floor(Math.random() * sameFloorFurn.length)];
+                      const xBase = targetFurn.house === 2 ? HOUSE2_LEFT : HOUSE_LEFT;
+                      p.seekerState = 'investigate';
+                      p.investigateTargetX = xBase + targetFurn.x + targetFurn.w / 2;
+                    }
+                  }
+                }
               }
             }
           }
@@ -919,6 +1074,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               p.isCamo = false;
               p.color = p.baseColor;
             }
+
+            // Alert nearby AI Seekers to pursue this damaged hider!
+            players.forEach(seeker => {
+              if (seeker.team === 'Seeker' && seeker.isAI && seeker.floor === p.floor) {
+                const dist = Math.abs(seeker.x - p.x);
+                if (dist < 350) { // wider alert radius on bullet hit
+                  seeker.seekerState = 'pursue';
+                  seeker.pursuitTargetId = p.id;
+                  seeker.pursuitTimer = 6.0; // longer chase
+                }
+              }
+            });
           }
         }
       });
@@ -1013,6 +1180,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               floor: seeker.floor,
               life: 40,
             });
+
+            // Trigger pursuit state for AI Seeker bot
+            seeker.seekerState = 'pursue';
+            seeker.pursuitTargetId = p.id;
+            seeker.pursuitTimer = 5.0; // chase for 5 seconds (refreshes on next detection)
           }
         }
       }
