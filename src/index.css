@@ -37,6 +37,7 @@ body {
   overflow: hidden;
   height: 100vh;
   width: 100vw;
+  touch-action: none; /* Disable viewport swiping, panning, and bouncing */
 }
 
 /* Glassmorphism utility */
@@ -269,6 +270,7 @@ body {
   overflow-y: auto;
   flex-grow: 1;
   padding-right: 5px;
+  touch-action: pan-y; /* Enable vertical scroll inside maps list */
 }
 
 .map-card {
@@ -437,6 +439,7 @@ body {
   overflow-y: auto;
   flex-grow: 1;
   padding-right: 5px;
+  touch-action: pan-y; /* Enable vertical scroll inside skins list */
 }
 
 .skin-card {
