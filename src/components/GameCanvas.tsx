@@ -634,10 +634,20 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         p.x += p.vx;
         p.y += p.vy;
 
-        // Boundary checks inside house structure
-        // If Seeker, can wander outside left/right. If Hider, must stay in house or balconies
-        const leftLimit = p.team === 'Seeker' ? 20 : HOUSE_LEFT;
-        const rightLimit = p.team === 'Seeker' ? CANVAS_WIDTH - 20 : HOUSE2_RIGHT + 50; // allow balcony on right of House 2
+        // Boundary checks inside house structure based on floor level
+        let leftLimit = HOUSE_LEFT;
+        let rightLimit = HOUSE2_RIGHT;
+
+        if (p.floor === 1) {
+          leftLimit = p.team === 'Seeker' ? 20 : HOUSE_LEFT;
+          rightLimit = p.team === 'Seeker' ? CANVAS_WIDTH - 20 : HOUSE2_RIGHT + 50;
+        } else if (p.floor === 2) {
+          leftLimit = HOUSE_LEFT;
+          rightLimit = HOUSE2_RIGHT + 50; // Balcony on Floor 2 right side
+        } else if (p.floor === 3) {
+          leftLimit = HOUSE_LEFT;
+          rightLimit = HOUSE2_RIGHT;
+        }
 
         if (p.x < leftLimit) p.x = leftLimit;
         if (p.x + p.width > rightLimit) p.x = rightLimit - p.width;
@@ -831,13 +841,27 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               p.vx = p.direction * speed;
               p.x += p.vx;
 
-              // Border boundaries bounce
-              if (p.x < HOUSE_LEFT - 30) {
-                p.x = HOUSE_LEFT - 30;
+              // Border boundaries bounce based on floor level
+              let minX = HOUSE_LEFT - 30;
+              let maxX = HOUSE2_RIGHT + 50;
+
+              if (p.floor === 1) {
+                minX = HOUSE_LEFT - 30;
+                maxX = HOUSE2_RIGHT + 50;
+              } else if (p.floor === 2) {
+                minX = HOUSE_LEFT;
+                maxX = HOUSE2_RIGHT + 50; // Balcony
+              } else if (p.floor === 3) {
+                minX = HOUSE_LEFT;
+                maxX = HOUSE2_RIGHT;
+              }
+
+              if (p.x < minX) {
+                p.x = minX;
                 p.direction = 1;
               }
-              if (p.x + p.width > HOUSE2_RIGHT + 50) {
-                p.x = HOUSE2_RIGHT + 50 - p.width;
+              if (p.x + p.width > maxX) {
+                p.x = maxX - p.width;
                 p.direction = -1;
               }
 
