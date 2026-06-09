@@ -34,8 +34,8 @@
 body {
   font-family: var(--font-main);
   background-color: var(--bg-primary);
-  overflow: auto; /* Enable page scrolling */
-  min-height: 100vh;
+  overflow: hidden;
+  height: 100vh;
   width: 100vw;
 }
 
@@ -67,14 +67,13 @@ body {
 /* VIEWPORT CONTAINER */
 .app-main-viewport {
   width: 100vw;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
   background: radial-gradient(circle at center, #181938 0%, #05060c 100%);
   position: relative;
-  overflow: auto; /* Enable scrollbars if children overflow */
-  padding: 20px 0;
+  overflow: hidden;
 }
 
 /* ======================================================== */
@@ -1386,69 +1385,4 @@ body {
   }
 }
 
-/* Media queries for scaling down to fit smaller viewports */
-@media (max-width: 980px) {
-  .menu-container,
-  .shop-container,
-  .wheel-container,
-  .game-screen-container {
-    transform: scale(0.9);
-    transform-origin: center top;
-    margin: 10px auto;
-  }
-}
 
-@media (max-width: 860px) {
-  .menu-container,
-  .shop-container,
-  .wheel-container,
-  .game-screen-container {
-    transform: scale(0.8);
-    transform-origin: center top;
-    margin: 10px auto;
-  }
-}
-
-@media (max-width: 768px) {
-  .menu-container,
-  .shop-container,
-  .wheel-container,
-  .game-screen-container {
-    transform: scale(0.7);
-    transform-origin: center top;
-    margin: 10px auto;
-  }
-}
-
-@media (max-width: 680px) {
-  .menu-container,
-  .shop-container,
-  .wheel-container,
-  .game-screen-container {
-    transform: scale(0.6);
-    transform-origin: center top;
-    margin: 10px auto;
-  }
-}
-
-@media (max-width: 580px) {
-  .menu-container,
-  .shop-container,
-  .wheel-container,
-  .game-screen-container {
-    transform: scale(0.5);
-    transform-origin: center top;
-    margin: 10px auto;
-  }
-}
-
-@media (max-width: 480px) {
-  .menu-container,
-  .shop-container,
-  .wheel-container,
-  .game-screen-container {
-    transform: scale(0.4);
-    transform-origin: center top;
-    margin: 10px auto;
-  }
-}

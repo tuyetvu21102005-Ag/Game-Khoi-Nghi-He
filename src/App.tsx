@@ -16,6 +16,30 @@ function App() {
   const [activeSkin, setActiveSkin] = useState<string>('skin_default');
   const [selectedMapId, setSelectedMapId] = useState<string>('map_erangel');
   const [assignedTeam, setAssignedTeam] = useState<Team>('Hider');
+  const [scale, setScale] = useState<number>(1);
+
+  // Resize handler to scale the 950x650 game bounds dynamically into the screen
+  useEffect(() => {
+    const handleResize = () => {
+      const baseWidth = 950;
+      const baseHeight = 650;
+      const padding = 16; // 16px safety margins
+
+      const scaleX = (window.innerWidth - padding) / baseWidth;
+      const scaleY = (window.innerHeight - padding) / baseHeight;
+
+      // Always fit inside the viewport by taking the minimum scale factor
+      const newScale = Math.min(scaleX, scaleY);
+      setScale(newScale);
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   // Load stats from localStorage if available
   useEffect(() => {
@@ -94,49 +118,62 @@ function App() {
 
   return (
     <main className="app-main-viewport">
-      {currentScreen === 'menu' && (
-        <MainMenu
-          coinsP={coinsP}
-          coinsG={coinsG}
-          activeSkin={activeSkin}
-          selectedMapId={selectedMapId}
-          onSelectMap={setSelectedMapId}
-          onStartGame={handleStartGame}
-          onNavigate={(screen) => setCurrentScreen(screen)}
-        />
-      )}
+      <div
+        className="app-scale-wrapper"
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+          width: '950px',
+          height: '650px',
+          display: 'flex',
+          flexDirection: 'column',
+          flexShrink: 0,
+        }}
+      >
+        {currentScreen === 'menu' && (
+          <MainMenu
+            coinsP={coinsP}
+            coinsG={coinsG}
+            activeSkin={activeSkin}
+            selectedMapId={selectedMapId}
+            onSelectMap={setSelectedMapId}
+            onStartGame={handleStartGame}
+            onNavigate={(screen) => setCurrentScreen(screen)}
+          />
+        )}
 
-      {currentScreen === 'shop' && (
-        <Shop
-          coinsP={coinsP}
-          coinsG={coinsG}
-          ownedSkins={ownedSkins}
-          activeSkin={activeSkin}
-          onBuySkin={handleBuySkin}
-          onEquipSkin={handleEquipSkin}
-          onTopUpG={handleTopUpG}
-          onBack={() => setCurrentScreen('menu')}
-        />
-      )}
+        {currentScreen === 'shop' && (
+          <Shop
+            coinsP={coinsP}
+            coinsG={coinsG}
+            ownedSkins={ownedSkins}
+            activeSkin={activeSkin}
+            onBuySkin={handleBuySkin}
+            onEquipSkin={handleEquipSkin}
+            onTopUpG={handleTopUpG}
+            onBack={() => setCurrentScreen('menu')}
+          />
+        )}
 
-      {currentScreen === 'wheel' && (
-        <LuckyWheel
-          coinsP={coinsP}
-          ownedSkins={ownedSkins}
-          onAddCoinsP={handleAddCoinsP}
-          onAddSkin={handleAddSkinDirect}
-          onBack={() => setCurrentScreen('menu')}
-        />
-      )}
+        {currentScreen === 'wheel' && (
+          <LuckyWheel
+            coinsP={coinsP}
+            ownedSkins={ownedSkins}
+            onAddCoinsP={handleAddCoinsP}
+            onAddSkin={handleAddSkinDirect}
+            onBack={() => setCurrentScreen('menu')}
+          />
+        )}
 
-      {currentScreen === 'game' && (
-        <GameScreen
-          playerTeam={assignedTeam}
-          selectedMapId={selectedMapId}
-          activeSkinId={activeSkin}
-          onGameOver={handleGameOver}
-        />
-      )}
+        {currentScreen === 'game' && (
+          <GameScreen
+            playerTeam={assignedTeam}
+            selectedMapId={selectedMapId}
+            activeSkinId={activeSkin}
+            onGameOver={handleGameOver}
+          />
+        )}
+      </div>
     </main>
   );
 }
