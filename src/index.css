@@ -82,7 +82,7 @@ body {
 
 .menu-container {
   width: 950px;
-  height: 650px;
+  height: 800px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -362,7 +362,7 @@ body {
 
 .shop-container {
   width: 950px;
-  height: 650px;
+  height: 800px;
   display: flex;
   flex-direction: column;
   padding: 30px;
@@ -656,7 +656,7 @@ body {
 
 .wheel-container {
   width: 950px;
-  height: 650px;
+  height: 800px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -752,7 +752,7 @@ body {
 
 .game-screen-container {
   width: 950px;
-  height: 650px;
+  height: 800px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -853,7 +853,7 @@ body {
   top: 85px;
   left: 25px;
   right: 25px;
-  height: 500px;
+  height: 600px;
   z-index: 25; /* Higher z-index to make sure it overlays canvas and any bottom HUD elements */
   display: flex;
   justify-content: center;
@@ -926,7 +926,7 @@ body {
 .canvas-wrapper {
   position: relative;
   width: 900px;
-  height: 480px;
+  height: 600px;
   background: #000;
   border-radius: 12px;
   overflow: hidden;

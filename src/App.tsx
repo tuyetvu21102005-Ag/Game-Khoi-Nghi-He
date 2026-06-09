@@ -22,7 +22,7 @@ function App() {
   useEffect(() => {
     const handleResize = () => {
       const baseWidth = 950;
-      const baseHeight = 650;
+      const baseHeight = 800;
       const padding = 16; // 16px safety margins
 
       const scaleX = (window.innerWidth - padding) / baseWidth;
@@ -124,7 +124,7 @@ function App() {
           transform: `scale(${scale})`,
           transformOrigin: 'center center',
           width: '950px',
-          height: '650px',
+          height: '800px',
           display: 'flex',
           flexDirection: 'column',
           flexShrink: 0,
