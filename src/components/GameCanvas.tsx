@@ -606,9 +606,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           elevator.direction = 1;
           elevator.targetFloor = 2;
           elevator.state = 'moving';
-        } else if (elevator.floor === 4) {
+        } else if (elevator.floor === 3) {
           elevator.direction = -1;
-          elevator.targetFloor = 3;
+          elevator.targetFloor = 2;
           elevator.state = 'moving';
         } else {
           elevator.targetFloor = elevator.floor + elevator.direction;
@@ -634,7 +634,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       if (!p.isAI) {
         // Human Player Movement Logic
-        let speed = 3.5;
+        let speed = 5.0;
         p.vx = 0;
 
         // Seeker players are locked outside during the 20-second hiding phase
@@ -1115,33 +1115,35 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         p.y = floorY - p.height;
       }
 
-      // Shaft door wall collisions
-      const shaftLeft = elevator.x - 25;
-      const shaftRight = elevator.x + 25;
-      const isElevatorAccessible = elevator.state === 'waiting' && p.floor === elevator.floor;
-      
-      if (!isElevatorAccessible) {
-        const prevX = p.x - p.vx;
-        const centerPrevX = prevX + p.width / 2;
-        const centerCurrX = p.x + p.width / 2;
+      // Shaft door wall collisions (only for Floors 1, 2, and 3)
+      if (p.floor < 4) {
+        const shaftLeft = elevator.x - 25;
+        const shaftRight = elevator.x + 25;
+        const isElevatorAccessible = elevator.state === 'waiting' && p.floor === elevator.floor;
         
-        if (centerPrevX < shaftLeft && centerCurrX >= shaftLeft) {
-          p.x = shaftLeft - p.width;
-          p.vx = 0;
-          if (p.isAI) p.direction = -p.direction as 1 | -1;
-        } else if (centerPrevX > shaftRight && centerCurrX <= shaftRight) {
-          p.x = shaftRight;
-          p.vx = 0;
-          if (p.isAI) p.direction = -p.direction as 1 | -1;
-        } else if (centerPrevX >= shaftLeft && centerPrevX <= shaftRight) {
-          if (centerCurrX < shaftLeft) {
-            p.x = shaftLeft;
+        if (!isElevatorAccessible) {
+          const prevX = p.x - p.vx;
+          const centerPrevX = prevX + p.width / 2;
+          const centerCurrX = p.x + p.width / 2;
+          
+          if (centerPrevX < shaftLeft && centerCurrX >= shaftLeft) {
+            p.x = shaftLeft - p.width;
             p.vx = 0;
-            if (p.isAI) p.direction = 1;
-          } else if (centerCurrX > shaftRight) {
-            p.x = shaftRight - p.width;
+            if (p.isAI) p.direction = -p.direction as 1 | -1;
+          } else if (centerPrevX > shaftRight && centerCurrX <= shaftRight) {
+            p.x = shaftRight;
             p.vx = 0;
-            if (p.isAI) p.direction = -1;
+            if (p.isAI) p.direction = -p.direction as 1 | -1;
+          } else if (centerPrevX >= shaftLeft && centerPrevX <= shaftRight) {
+            if (centerCurrX < shaftLeft) {
+              p.x = shaftLeft;
+              p.vx = 0;
+              if (p.isAI) p.direction = 1;
+            } else if (centerCurrX > shaftRight) {
+              p.x = shaftRight - p.width;
+              p.vx = 0;
+              if (p.isAI) p.direction = -1;
+            }
           }
         }
       }
@@ -1409,28 +1411,60 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.fillStyle = activeMap.floorColor;
       ctx.fillRect(HOUSE_LEFT, floorY - 4, HOUSE_WIDTH, 8);   // House 1
       
-      // House 2 floor lines are split by the elevator shaft (X = 1175 to 1225)
-      ctx.fillRect(HOUSE2_LEFT, floorY - 4, 1175 - HOUSE2_LEFT, 8);
-      ctx.fillRect(1225, floorY - 4, HOUSE2_RIGHT - 1225, 8);
+      // House 2 floor lines are split by the elevator shaft (X = 1175 to 1225) only for Floor 1, 2, 3
+      if (idx < 3) {
+        ctx.fillRect(HOUSE2_LEFT, floorY - 4, 1175 - HOUSE2_LEFT, 8);
+        ctx.fillRect(1225, floorY - 4, HOUSE2_RIGHT - 1225, 8);
+      } else {
+        ctx.fillRect(HOUSE2_LEFT, floorY - 4, HOUSE2_WIDTH, 8); // Solid Floor 4
+      }
 
       ctx.fillRect(HOUSE3_LEFT, floorY - 4, HOUSE3_WIDTH, 8); // House 3
     });
 
-    // Draw vertical elevator shaft walls in House 2 (X = 1175 and X = 1225)
+    // Draw Stairs/Ladders for all three houses
+    STAIRS.forEach(stair => {
+      const bottomY = FLOOR_HEIGHTs[stair.fromFloor - 1];
+      const topY = FLOOR_HEIGHTs[stair.toFloor - 1];
+      
+      // Draw rails
+      ctx.strokeStyle = '#7f8c8d';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      // Left rail
+      ctx.moveTo(stair.x - 12, bottomY);
+      ctx.lineTo(stair.x - 12, topY);
+      // Right rail
+      ctx.moveTo(stair.x + 12, bottomY);
+      ctx.lineTo(stair.x + 12, topY);
+      ctx.stroke();
+      
+      // Draw rungs
+      ctx.strokeStyle = '#bdc3c7';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let ry = topY + 8; ry < bottomY; ry += 12) {
+        ctx.moveTo(stair.x - 12, ry);
+        ctx.lineTo(stair.x + 12, ry);
+      }
+      ctx.stroke();
+    });
+
+    // Draw vertical elevator shaft walls in House 2 (X = 1175 and X = 1225, stopping at Floor 3 ceiling Y = 180)
     ctx.strokeStyle = '#2c3e50';
     ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.moveTo(1175, 60);
+    ctx.moveTo(1175, 180);
     ctx.lineTo(1175, 540);
-    ctx.moveTo(1225, 60);
+    ctx.moveTo(1225, 180);
     ctx.lineTo(1225, 540);
     ctx.stroke();
 
-    // Draw elevator cables
+    // Draw elevator cables (cables hang from Floor 3 ceiling at Y = 180)
     ctx.strokeStyle = '#7f8c8d';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(1200, 60);
+    ctx.moveTo(1200, 180);
     ctx.lineTo(1200, elevator.y - 60); // stops at the top of the cabin
     ctx.stroke();
 
