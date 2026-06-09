@@ -268,6 +268,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!e.key) return;
       const key = e.key.toLowerCase();
+      console.log('[GameCanvas] KeyDown:', key, 'Code:', e.code);
       
       // Store both e.key and e.code to bypass Telex/Unikey and handle layout issues
       keysPressed.current[key] = true;
@@ -290,6 +291,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const handleKeyUp = (e: KeyboardEvent) => {
       if (!e.key) return;
       const key = e.key.toLowerCase();
+      console.log('[GameCanvas] KeyUp:', key, 'Code:', e.code);
       
       keysPressed.current[key] = false;
       if (e.code) {
@@ -316,10 +318,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    
     const canvas = canvasRef.current;
+    const handleCanvasClick = () => {
+      canvas?.focus();
+    };
+
     if (canvas) {
       canvas.addEventListener('mousemove', handleMouseMove);
       canvas.addEventListener('mousedown', handleMouseDown);
+      canvas.addEventListener('click', handleCanvasClick);
     }
 
     return () => {
@@ -328,6 +336,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       if (canvas) {
         canvas.removeEventListener('mousemove', handleMouseMove);
         canvas.removeEventListener('mousedown', handleMouseDown);
+        canvas.removeEventListener('click', handleCanvasClick);
       }
     };
   }, [playerTeam, gameActive, isHidePhase, seekerAmmo, isReloading]);
@@ -340,6 +349,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     setSeekerScore(0);
     setSeekerAmmo(30);
     setIsReloading(false);
+    
+    // Autofocus canvas to receive keyboard inputs immediately
+    setTimeout(() => {
+      canvasRef.current?.focus();
+    }, 100);
   }, [selectedMapId, playerTeam, gameActive]);
 
   // Trigger Camouflage for Player
@@ -494,6 +508,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const updateGamePhysics = () => {
     const players = playersRef.current;
     const user = players.find(p => p.id === 'player_user');
+
+    // Throttled debug loop logging to make troubleshooting easier
+    if (Math.random() < 0.003) {
+      console.log('[GameCanvas] Physics update loop active. Players:', players.length, 'Active Keys:', JSON.stringify(keysPressed.current));
+    }
 
 
 
@@ -1247,6 +1266,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           width={CANVAS_WIDTH}
           height={CANVAS_HEIGHT}
           className="game-canvas-element"
+          tabIndex={0}
+          style={{ outline: 'none' }}
         />
 
         {/* Setup phase bottom controls for HIDER */}
