@@ -34,8 +34,9 @@
 body {
   font-family: var(--font-main);
   background-color: var(--bg-primary);
-  overflow: hidden;
-  height: 100vh;
+  overflow-y: auto; /* Enable vertical scrollbar */
+  overflow-x: hidden; /* Prevent horizontal scrollbar */
+  min-height: 100vh;
   width: 100vw;
 }
 
@@ -67,13 +68,15 @@ body {
 /* VIEWPORT CONTAINER */
 .app-main-viewport {
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Align content to top so scrolling is not cut off */
   background: radial-gradient(circle at center, #181938 0%, #05060c 100%);
   position: relative;
-  overflow: hidden;
+  overflow-y: auto; /* Enable vertical scrollbar */
+  overflow-x: hidden; /* Hide horizontal scrollbar */
+  padding: 40px 0; /* Vertical spacing around the scaled canvas container */
 }
 
 /* ======================================================== */

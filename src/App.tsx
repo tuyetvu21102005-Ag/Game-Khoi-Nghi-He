@@ -22,14 +22,12 @@ function App() {
   useEffect(() => {
     const handleResize = () => {
       const baseWidth = 950;
-      const baseHeight = 800;
       const padding = 16; // 16px safety margins
 
       const scaleX = (window.innerWidth - padding) / baseWidth;
-      const scaleY = (window.innerHeight - padding) / baseHeight;
 
-      // Always fit inside the viewport by taking the minimum scale factor
-      const newScale = Math.min(scaleX, scaleY);
+      // Fit screen width, with a max scale of 1.0
+      const newScale = Math.min(scaleX, 1);
       setScale(newScale);
     };
 
@@ -122,12 +120,13 @@ function App() {
         className="app-scale-wrapper"
         style={{
           transform: `scale(${scale})`,
-          transformOrigin: 'center center',
+          transformOrigin: 'center top',
           width: '950px',
           height: '800px',
           display: 'flex',
           flexDirection: 'column',
           flexShrink: 0,
+          margin: 'auto',
         }}
       >
         {currentScreen === 'menu' && (
