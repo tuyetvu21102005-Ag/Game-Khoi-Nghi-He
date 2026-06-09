@@ -266,22 +266,35 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   // Setup keyboard & mouse event listeners
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      keysPressed.current[e.key.toLowerCase()] = true;
+      if (!e.key) return;
+      const key = e.key.toLowerCase();
+      
+      // Store both e.key and e.code to bypass Telex/Unikey and handle layout issues
+      keysPressed.current[key] = true;
+      if (e.code) {
+        keysPressed.current[e.code.toLowerCase()] = true;
+      }
 
-      // Spacebar for Hider Camouflage
-      if (e.key === ' ' && playerTeam === 'Hider' && gameActive) {
+      // Spacebar for Hider Camouflage (Space, Spacebar, keycode 32)
+      if ((e.key === ' ' || e.code === 'Space' || e.keyCode === 32) && playerTeam === 'Hider' && gameActive) {
         e.preventDefault();
         triggerPlayerCamouflage();
       }
 
-      // R key for Seeker Reloading
-      if (e.key.toLowerCase() === 'r' && playerTeam === 'Seeker' && gameActive) {
+      // R key for Seeker Reloading (R, KeyR, keycode 82)
+      if ((key === 'r' || e.code === 'KeyR' || e.keyCode === 82) && playerTeam === 'Seeker' && gameActive) {
         triggerPlayerReload();
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      keysPressed.current[e.key.toLowerCase()] = false;
+      if (!e.key) return;
+      const key = e.key.toLowerCase();
+      
+      keysPressed.current[key] = false;
+      if (e.code) {
+        keysPressed.current[e.code.toLowerCase()] = false;
+      }
     };
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -493,13 +506,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         let speed = 3.5;
         p.vx = 0;
 
-        // Move Left / Right
-        if (keysPressed.current['a'] || keysPressed.current['arrowleft']) {
+        // Move Left / Right (Checks KeyA/KeyD to support Unikey/Telex input methods)
+        const goLeft = keysPressed.current['a'] || 
+                       keysPressed.current['arrowleft'] || 
+                       keysPressed.current['keya'] || 
+                       keysPressed.current['left'];
+                       
+        const goRight = keysPressed.current['d'] || 
+                        keysPressed.current['arrowright'] || 
+                        keysPressed.current['keyd'] || 
+                        keysPressed.current['right'];
+
+        if (goLeft) {
           p.vx = -speed;
           p.direction = -1;
           p.isCamo = false; // Break camo on move
         }
-        if (keysPressed.current['d'] || keysPressed.current['arrowright']) {
+        if (goRight) {
           p.vx = speed;
           p.direction = 1;
           p.isCamo = false; // Break camo on move
@@ -520,14 +543,24 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           }
         });
 
+        const goUp = keysPressed.current['w'] || 
+                     keysPressed.current['arrowup'] || 
+                     keysPressed.current['keyw'] || 
+                     keysPressed.current['up'];
+                     
+        const goDown = keysPressed.current['s'] || 
+                       keysPressed.current['arrowdown'] || 
+                       keysPressed.current['keys'] || 
+                       keysPressed.current['down'];
+
         if (onStair) {
-          if (keysPressed.current['w'] || keysPressed.current['arrowup']) {
+          if (goUp) {
             if (p.floor === targetStair.fromFloor) {
               // Climb up
               p.vy = -3;
               p.isCamo = false;
             }
-          } else if (keysPressed.current['s'] || keysPressed.current['arrowdown']) {
+          } else if (goDown) {
             if (p.floor === targetStair.toFloor) {
               // Climb down
               p.vy = 3;
