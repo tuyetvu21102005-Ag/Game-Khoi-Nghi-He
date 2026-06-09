@@ -190,7 +190,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
       {/* Hide phase loading cover for Seeker */}
       {isHidePhase && playerTeam === 'Seeker' && (
-        <div className="seeker-waiting-screen glass">
+        <div className="seeker-waiting-screen">
           <div className="waiting-card">
             <div className="military-radar" />
             <h2>ĐỘI TRỐN ĐANG ẨN NẤP</h2>

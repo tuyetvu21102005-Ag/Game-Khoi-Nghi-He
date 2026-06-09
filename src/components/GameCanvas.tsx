@@ -283,7 +283,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       }
 
       // R key for Seeker Reloading (R, KeyR, keycode 82)
-      if ((key === 'r' || e.code === 'KeyR' || e.keyCode === 82) && playerTeam === 'Seeker' && gameActive) {
+      if ((key === 'r' || e.code === 'KeyR' || e.keyCode === 82) && playerTeam === 'Seeker' && gameActive && !isHidePhase) {
         triggerPlayerReload();
       }
     };
@@ -524,6 +524,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         // Human Player Movement Logic
         let speed = 3.5;
         p.vx = 0;
+
+        // Seeker players are locked outside during the 20-second hiding phase
+        if (p.team === 'Seeker' && isHidePhase) {
+          p.x = 30;
+          p.y = FLOOR_HEIGHTs[0] - p.height;
+          p.floor = 1;
+          p.vx = 0;
+          p.vy = 0;
+          return;
+        }
 
         // Move Left / Right (Checks KeyA/KeyD to support Unikey/Telex input methods)
         const goLeft = keysPressed.current['a'] || 
@@ -980,6 +990,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // During the hide phase, Seeker player sees absolutely nothing (solid black canvas)
+    if (isHidePhase && playerTeam === 'Seeker') {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      return;
+    }
+
     // 1. Clear background & Draw sky
     ctx.fillStyle = activeMap.skyColor;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -1308,7 +1325,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         )}
 
         {/* HUD Overlay for Seeker */}
-        {playerTeam === 'Seeker' && gameActive && (
+        {playerTeam === 'Seeker' && gameActive && !isHidePhase && (
           <div className="game-hud-bottom seeker-hud glass">
             <div className="weapon-status">
               <span className="weapon-name">AK-47</span>
