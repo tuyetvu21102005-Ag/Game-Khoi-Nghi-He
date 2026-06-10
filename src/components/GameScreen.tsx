@@ -36,7 +36,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   // Statistics
   const [playerKills, setPlayerKills] = useState<number>(0);
   const [playerScoreP, setPlayerScoreP] = useState<number>(0);
-  const [hidersRemaining, setHidersRemaining] = useState<number>(20);
+  const [hidersRemaining, setHidersRemaining] = useState<number>(24);
 
   // Match timers
   useEffect(() => {
@@ -170,7 +170,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
         <div className="hud-column">
           <span className="hud-label">Kẻ Trốn Sống Sót</span>
-          <span className="hud-value hiders-count">{hidersRemaining} / 20</span>
+          <span className="hud-value hiders-count">{hidersRemaining} / 24</span>
         </div>
       </header>
 
@@ -202,7 +202,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       {/* Hide phase instructions for Hider */}
       {isHidePhase && playerTeam === 'Hider' && (
         <div className="hider-instruction-bar anim-pulse">
-          ⚠️ <strong>HÃY TRỐN NGAY!</strong> Sử dụng Phím Mũi Tên / WASD để di chuyển lên 3 tầng, đứng cạnh đồ vật và ấn <strong>SPACE</strong> để ngụy trang!
+          ⚠️ <strong>HÃY TRỐN NGAY!</strong> Sử dụng Phím Mũi Tên / WASD để di chuyển lên 5 tầng và tầng thượng, đứng cạnh đồ vật và ấn <strong>SPACE</strong> để ngụy trang!
         </div>
       )}
 
