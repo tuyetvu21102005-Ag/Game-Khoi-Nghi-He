@@ -291,8 +291,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     
     players.push(initialPlayer);
 
-    // Spawn 20 Hiders total (either user + 19 AI, or 20 AI)
-    const totalHidersCount = 20;
+    // Spawn 24 Hiders total (either user + 23 AI, or 24 AI)
+    const totalHidersCount = 24;
     const aiHidersToSpawn = playerIsHider ? totalHidersCount - 1 : totalHidersCount;
     for (let i = 0; i < aiHidersToSpawn; i++) {
       const startFloor = Math.floor(Math.random() * 6) + 1; // Floor 1, 2, 3, 4, 5, or 6 (Rooftop)
@@ -332,8 +332,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       });
     }
 
-    // Spawn 5 Seekers total (either user + 4 AI, or 5 AI)
-    const totalSeekersCount = 5;
+    // Spawn 6 Seekers total (either user + 5 AI, or 6 AI)
+    const totalSeekersCount = 6;
     const aiSeekersToSpawn = playerIsHider ? totalSeekersCount : totalSeekersCount - 1;
     for (let i = 0; i < aiSeekersToSpawn; i++) {
       players.push({

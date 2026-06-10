@@ -229,7 +229,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                     {assignedTeam === 'Hider' ? 'ĐỘI ĐI TRỐN (HIDER)' : 'ĐỘI ĐI TÌM (SEEKER)'}
                   </h3>
                   <span className="team-size">
-                    {assignedTeam === 'Hider' ? 'Tổng số: 20 người trốn' : 'Tổng số: 5 người tìm (AK-47)'}
+                    {assignedTeam === 'Hider' ? 'Tổng số: 24 người trốn' : 'Tổng số: 6 người tìm (AK-47)'}
                   </span>
                 </div>
                 <p className="loading-tip">Đang tải bản đồ...</p>
