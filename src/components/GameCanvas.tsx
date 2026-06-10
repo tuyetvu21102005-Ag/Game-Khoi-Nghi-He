@@ -188,12 +188,20 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     furniture1.forEach(f => f.house = 1);
 
     // Duplicate all furniture items for House 2
-    const furniture2 = furniture1.map(f => ({
-      ...f,
-      id: `${f.id}_h2`,
-      house: 2,
-      name: `${f.name} (Nhà 2)`
-    }));
+    const furniture2 = furniture1.map(f => {
+      let x = f.x;
+      // Adjust if overlapping with elevator shaft (shaft is at relative x = 275 to 325)
+      if (x >= 250 && x <= 350) {
+        x = x < 300 ? x - 70 : x + 70;
+      }
+      return {
+        ...f,
+        id: `${f.id}_h2`,
+        house: 2,
+        x,
+        name: `${f.name} (Nhà 2)`
+      };
+    });
 
     // Duplicate all furniture items for House 3
     const furniture3 = furniture1.map(f => ({
@@ -1464,6 +1472,36 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.lineTo(1225, 540);
     ctx.stroke();
 
+    // Draw elevator shaft sliding doors on Floor 1, 2, and 3
+    [1, 2, 3].forEach(floorNum => {
+      const floorY = FLOOR_HEIGHTs[floorNum - 1];
+      const isCabinPresent = elevator.floor === floorNum && elevator.state === 'waiting';
+
+      if (isCabinPresent) {
+        // Draw open sliding doors
+        ctx.fillStyle = '#7f8c8d';
+        ctx.fillRect(1176, floorY - 56, 8, 52);  // Left door open
+        ctx.fillRect(1216, floorY - 56, 8, 52);  // Right door open
+      } else {
+        // Draw closed sliding doors
+        ctx.fillStyle = '#95a5a6'; // closed metallic door color
+        ctx.fillRect(1176, floorY - 56, 48, 52);
+        
+        // Vertical split line
+        ctx.strokeStyle = '#7f8c8d';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(1200, floorY - 56);
+        ctx.lineTo(1200, floorY - 4);
+        ctx.stroke();
+
+        // Small handles
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(1196, floorY - 32, 2, 12);
+        ctx.fillRect(1202, floorY - 32, 2, 12);
+      }
+    });
+
     // Draw elevator cables (cables hang from Floor 3 ceiling at Y = 180)
     ctx.strokeStyle = '#7f8c8d';
     ctx.lineWidth = 2;
@@ -1471,6 +1509,64 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.moveTo(1200, 180);
     ctx.lineTo(1200, elevator.y - 60); // stops at the top of the cabin
     ctx.stroke();
+
+    // Define drawWallAndDoor helper for interior partitions
+    const drawWallAndDoor = (xWall: number, floorY: number, ceilingY: number) => {
+      const doorW = 40;
+      const doorH = 75;
+      const topY = floorY - doorH;
+
+      // Draw solid wall above the door
+      ctx.strokeStyle = activeMap.wallColor;
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(xWall, ceilingY + 4);
+      ctx.lineTo(xWall, topY);
+      ctx.stroke();
+
+      // Draw door frame
+      ctx.strokeStyle = '#5c4033'; // Dark brown wood
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(xWall - doorW / 2, floorY);
+      ctx.lineTo(xWall - doorW / 2, topY);
+      ctx.lineTo(xWall + doorW / 2, topY);
+      ctx.lineTo(xWall + doorW / 2, floorY);
+      ctx.stroke();
+
+      // Draw door panel (open at 45 degree angle)
+      ctx.fillStyle = '#8b5a2b'; // Wood color
+      ctx.beginPath();
+      ctx.moveTo(xWall - doorW / 2, floorY);
+      ctx.lineTo(xWall - doorW / 2 - 15, floorY - 10);
+      ctx.lineTo(xWall - doorW / 2 - 15, topY - 10);
+      ctx.lineTo(xWall - doorW / 2, topY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Small door knob
+      ctx.fillStyle = '#f1c40f'; // Gold knob
+      ctx.beginPath();
+      ctx.arc(xWall - doorW / 2 - 10, floorY - 35, 3, 0, Math.PI * 2);
+      ctx.fill();
+    };
+
+    // Draw interior room walls and open doors for House 1 and House 3 (all floors), and House 2 (Floor 4 only)
+    FLOOR_HEIGHTs.forEach((floorY, idx) => {
+      const ceilingY = FLOOR_CEILINGS[idx];
+      
+      // House 1 Center Partition (X = 400)
+      drawWallAndDoor(400, floorY, ceilingY);
+      
+      // House 2 Floor 4 Center Partition (X = 1200, since Floor 4 has no elevator shaft)
+      if (idx === 3) {
+        drawWallAndDoor(1200, floorY, ceilingY);
+      }
+      
+      // House 3 Center Partition (X = 2000)
+      drawWallAndDoor(2000, floorY, ceilingY);
+    });
 
     // Draw elevator cabin (a glowing metallic frame cage)
     ctx.fillStyle = 'rgba(52, 73, 94, 0.6)'; // cabin background

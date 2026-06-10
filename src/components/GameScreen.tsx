@@ -27,8 +27,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   
   // Game state
   const [isHidePhase, setIsHidePhase] = useState<boolean>(true);
-  const [realTimeLeft, setRealTimeLeft] = useState<number>(150); // 150 real seconds (2.5 mins)
-  const [gameTimeText, setGameTimeText] = useState<string>('15:00');
+  const [realTimeLeft, setRealTimeLeft] = useState<number>(1200); // 1200 real seconds (20 mins)
+  const [gameTimeText, setGameTimeText] = useState<string>('20:00');
   const [killFeed, setKillFeed] = useState<KillEvent[]>([]);
   const [isMatchOver, setIsMatchOver] = useState<boolean>(false);
   const [matchResult, setMatchResult] = useState<'win' | 'lose' | null>(null);
@@ -58,11 +58,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
         const nextTime = prev - 1;
         
-        // Scale 150s down to 15m (900s)
-        // 1 real second = 6 game seconds
-        const gameSecondsTotal = nextTime * 6;
-        const minutes = Math.floor(gameSecondsTotal / 60);
-        const seconds = gameSecondsTotal % 60;
+        const minutes = Math.floor(nextTime / 60);
+        const seconds = nextTime % 60;
         setGameTimeText(
           `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
         );
@@ -133,7 +130,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     let finalRewardP = playerScoreP;
     if (playerTeam === 'Hider') {
       // Survival score: 2 points per survived second
-      const survivedSeconds = 150 - realTimeLeft;
+      const survivedSeconds = 1200 - realTimeLeft;
       finalRewardP += survivedSeconds * 2;
       if (playerWon) {
         finalRewardP += 300; // survival bonus
@@ -241,7 +238,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
               </div>
               <div className="stats-row">
                 <span>Thời gian sinh tồn:</span>
-                <strong>{150 - realTimeLeft} giây</strong>
+                <strong>{1200 - realTimeLeft} giây</strong>
               </div>
               <div className="stats-row bonus-row">
                 <span>Phần thưởng Xu P kiếm được:</span>
