@@ -965,7 +965,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 if (stair) {
                   const dx = stair.x - (p.x + p.width / 2);
                   if (Math.abs(dx) > 15) {
-                    p.vx = Math.sign(dx) * 2.5; // Chase speed
+                    p.vx = Math.sign(dx) * 4.2; // Chase speed
                     p.direction = p.vx > 0 ? 1 : -1;
                     p.x += p.vx;
                   } else {
@@ -982,7 +982,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 // Same floor tracking
                 const dx = target.x - p.x;
                 if (Math.abs(dx) > 40) {
-                  p.vx = Math.sign(dx) * 2.5;
+                  p.vx = Math.sign(dx) * 4.2;
                   p.direction = p.vx > 0 ? 1 : -1;
                   p.x += p.vx;
                 } else {
@@ -1040,7 +1040,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 if (stair) {
                   const dx = stair.x - (p.x + p.width / 2);
                   if (Math.abs(dx) > 15) {
-                    p.vx = Math.sign(dx) * 2.0;
+                    p.vx = Math.sign(dx) * 3.2;
                     p.direction = p.vx > 0 ? 1 : -1;
                     p.x += p.vx;
                   } else {
@@ -1057,7 +1057,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 }
               } else {
                 if (p.aiWaitTimer <= 0) {
-                  const speed = 2.0;
+                  const speed = 3.2;
                   p.vx = p.direction * speed;
                   p.x += p.vx;
 
@@ -1510,9 +1510,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.lineTo(1200, elevator.y - 60); // stops at the top of the cabin
     ctx.stroke();
 
-    // Define drawWallAndDoor helper for interior partitions
+    // Define drawWallAndDoor helper for interior partitions (draws wall with empty doorway opening)
     const drawWallAndDoor = (xWall: number, floorY: number, ceilingY: number) => {
-      const doorW = 40;
       const doorH = 75;
       const topY = floorY - doorH;
 
@@ -1523,33 +1522,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.moveTo(xWall, ceilingY + 4);
       ctx.lineTo(xWall, topY);
       ctx.stroke();
-
-      // Draw door frame
-      ctx.strokeStyle = '#5c4033'; // Dark brown wood
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(xWall - doorW / 2, floorY);
-      ctx.lineTo(xWall - doorW / 2, topY);
-      ctx.lineTo(xWall + doorW / 2, topY);
-      ctx.lineTo(xWall + doorW / 2, floorY);
-      ctx.stroke();
-
-      // Draw door panel (open at 45 degree angle)
-      ctx.fillStyle = '#8b5a2b'; // Wood color
-      ctx.beginPath();
-      ctx.moveTo(xWall - doorW / 2, floorY);
-      ctx.lineTo(xWall - doorW / 2 - 15, floorY - 10);
-      ctx.lineTo(xWall - doorW / 2 - 15, topY - 10);
-      ctx.lineTo(xWall - doorW / 2, topY);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-
-      // Small door knob
-      ctx.fillStyle = '#f1c40f'; // Gold knob
-      ctx.beginPath();
-      ctx.arc(xWall - doorW / 2 - 10, floorY - 35, 3, 0, Math.PI * 2);
-      ctx.fill();
     };
 
     // Draw interior room walls and open doors for House 1 and House 3 (all floors), and House 2 (Floor 4 only)
