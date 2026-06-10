@@ -84,18 +84,31 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const mousePos = useRef({ x: 0, y: 0 });
   const activeSkinData = ALL_SKINS.find(s => s.id === activeSkinId) || ALL_SKINS[0];
 
-  // Elevator State
-  const elevatorRef = useRef({
-    x: 1200,
-    w: 50,
-    y: 540, // bottom Y coordinate of cabin
-    floor: 1,
-    targetFloor: 1,
-    state: 'waiting' as 'waiting' | 'moving',
-    waitTimer: 180, // 3 seconds at 60fps
-    direction: 1, // 1 = going up, -1 = going down
-    speed: 2.2, // pixels per frame
-  });
+  // Elevators State (House 2 and House 3, speed boosted by 15%)
+  const elevatorsRef = useRef([
+    {
+      x: 1200,
+      w: 50,
+      y: 540, // bottom Y coordinate of cabin
+      floor: 1,
+      targetFloor: 1,
+      state: 'waiting' as 'waiting' | 'moving',
+      waitTimer: 180, // 3 seconds at 60fps
+      direction: 1, // 1 = going up, -1 = going down
+      speed: 2.53, // 2.2 * 1.15 = 2.53 (15% faster)
+    },
+    {
+      x: 2000,
+      w: 50,
+      y: 540, // bottom Y coordinate of cabin
+      floor: 1,
+      targetFloor: 1,
+      state: 'waiting' as 'waiting' | 'moving',
+      waitTimer: 180, // 3 seconds at 60fps
+      direction: 1, // 1 = going up, -1 = going down
+      speed: 2.53, // 2.2 * 1.15 = 2.53 (15% faster)
+    }
+  ]);
 
   const [selectedColor, setSelectedColor] = useState<string>('#ffffff');
   const [seekerAmmo, setSeekerAmmo] = useState<number>(30);
@@ -228,12 +241,20 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     });
 
     // Duplicate all furniture items for House 3
-    const furniture3 = furniture1.map(f => ({
-      ...f,
-      id: `${f.id}_h3`,
-      house: 3,
-      name: `${f.name} (Nhà 3)`
-    }));
+    const furniture3 = furniture1.map(f => {
+      let x = f.x;
+      // Adjust if overlapping with elevator shaft (shaft is at relative x = 275 to 325)
+      if (x >= 250 && x <= 350) {
+        x = x < 300 ? x - 70 : x + 70;
+      }
+      return {
+        ...f,
+        id: `${f.id}_h3`,
+        house: 3,
+        x,
+        name: `${f.name} (Nhà 3)`
+      };
+    });
 
     const furniture = [...furniture1, ...furniture2, ...furniture3];
 
@@ -629,36 +650,38 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       console.log('[GameCanvas] Physics update loop active. Players:', players.length, 'Active Keys:', JSON.stringify(keysPressed.current));
     }
 
-    // 0. Update Elevator Cabin Movement
-    const elevator = elevatorRef.current;
-    if (elevator.state === 'waiting') {
-      elevator.waitTimer -= 1;
-      if (elevator.waitTimer <= 0) {
-        if (elevator.floor === 1) {
-          elevator.direction = 1;
-          elevator.targetFloor = 2;
-          elevator.state = 'moving';
-        } else if (elevator.floor === 5) {
-          elevator.direction = -1;
-          elevator.targetFloor = 4;
-          elevator.state = 'moving';
+    // 0. Update Elevator Cabins Movement
+    const elevators = elevatorsRef.current;
+    elevators.forEach(elevator => {
+      if (elevator.state === 'waiting') {
+        elevator.waitTimer -= 1;
+        if (elevator.waitTimer <= 0) {
+          if (elevator.floor === 1) {
+            elevator.direction = 1;
+            elevator.targetFloor = 2;
+            elevator.state = 'moving';
+          } else if (elevator.floor === 5) {
+            elevator.direction = -1;
+            elevator.targetFloor = 4;
+            elevator.state = 'moving';
+          } else {
+            elevator.targetFloor = elevator.floor + elevator.direction;
+            elevator.state = 'moving';
+          }
+        }
+      } else if (elevator.state === 'moving') {
+        const targetY = FLOOR_HEIGHTs[elevator.targetFloor - 1];
+        const diffY = targetY - elevator.y;
+        if (Math.abs(diffY) > elevator.speed) {
+          elevator.y += Math.sign(diffY) * elevator.speed;
         } else {
-          elevator.targetFloor = elevator.floor + elevator.direction;
-          elevator.state = 'moving';
+          elevator.y = targetY;
+          elevator.floor = elevator.targetFloor;
+          elevator.state = 'waiting';
+          elevator.waitTimer = 180; // 3 seconds wait time
         }
       }
-    } else if (elevator.state === 'moving') {
-      const targetY = FLOOR_HEIGHTs[elevator.targetFloor - 1];
-      const diffY = targetY - elevator.y;
-      if (Math.abs(diffY) > elevator.speed) {
-        elevator.y += Math.sign(diffY) * elevator.speed;
-      } else {
-        elevator.y = targetY;
-        elevator.floor = elevator.targetFloor;
-        elevator.state = 'waiting';
-        elevator.waitTimer = 180; // 3 seconds wait time
-      }
-    }
+    });
 
     // 1. Update Player Movement
     players.forEach(p => {
@@ -701,10 +724,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           p.isCamo = false; // Break camo on move
         }
 
-        // Check if player is riding the elevator
-        const isInsideElevatorX = p.x + p.width / 2 >= elevator.x - 23 && p.x + p.width / 2 <= elevator.x + 23;
-        const isStandingOnCabinFloor = Math.abs((p.y + p.height) - elevator.y) < 15;
-        const isRidingElevator = isInsideElevatorX && isStandingOnCabinFloor;
+        // Check if player is riding any elevator
+        let ridingElevator = null;
+        for (let i = 0; i < elevators.length; i++) {
+          const elev = elevators[i];
+          const isInsideElevatorX = p.x + p.width / 2 >= elev.x - 23 && p.x + p.width / 2 <= elev.x + 23;
+          const isStandingOnCabinFloor = Math.abs((p.y + p.height) - elev.y) < 15;
+          if (isInsideElevatorX && isStandingOnCabinFloor) {
+            ridingElevator = elev;
+            break;
+          }
+        }
+        const isRidingElevator = ridingElevator !== null;
 
         if (!isRidingElevator) {
           // Climbing Stairs Logic
@@ -1130,15 +1161,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       }
 
       // Unified Post-Movement Elevator Ride-Along & Shaft door collision
-      const isInsideElevatorX = p.x + p.width / 2 >= elevator.x - 23 && p.x + p.width / 2 <= elevator.x + 23;
-      const isStandingOnCabinFloor = Math.abs((p.y + p.height) - elevator.y) < 15;
-      const isRidingElevator = isInsideElevatorX && isStandingOnCabinFloor;
+      let ridingElevator = null;
+      for (let i = 0; i < elevators.length; i++) {
+        const elev = elevators[i];
+        const isInsideElevatorX = p.x + p.width / 2 >= elev.x - 23 && p.x + p.width / 2 <= elev.x + 23;
+        const isStandingOnCabinFloor = Math.abs((p.y + p.height) - elev.y) < 15;
+        if (isInsideElevatorX && isStandingOnCabinFloor) {
+          ridingElevator = elev;
+          break;
+        }
+      }
+      const isRidingElevator = ridingElevator !== null;
 
-      if (isRidingElevator) {
-        p.y = elevator.y - p.height;
+      if (isRidingElevator && ridingElevator) {
+        p.y = ridingElevator.y - p.height;
         p.vy = 0;
         p.isCamo = false;
-        const closestFloorIndex = FLOOR_HEIGHTs.findIndex(fh => Math.abs(elevator.y - fh) < 45);
+        const closestFloorIndex = FLOOR_HEIGHTs.findIndex(fh => Math.abs(ridingElevator.y - fh) < 45);
         if (closestFloorIndex !== -1) {
           p.floor = closestFloorIndex + 1;
         }
@@ -1150,32 +1189,35 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       // Shaft door wall collisions (only for Floors 1, 2, 3, 4, and 5)
       if (p.floor < 6) {
-        const shaftLeft = elevator.x - 25;
-        const shaftRight = elevator.x + 25;
-        const isElevatorAccessible = elevator.state === 'waiting' && p.floor === elevator.floor;
-        
-        if (!isElevatorAccessible) {
-          const prevX = p.x - p.vx;
-          const centerPrevX = prevX + p.width / 2;
-          const centerCurrX = p.x + p.width / 2;
+        for (let i = 0; i < elevators.length; i++) {
+          const elev = elevators[i];
+          const shaftLeft = elev.x - 25;
+          const shaftRight = elev.x + 25;
+          const isElevatorAccessible = elev.state === 'waiting' && p.floor === elev.floor;
           
-          if (centerPrevX < shaftLeft && centerCurrX >= shaftLeft) {
-            p.x = shaftLeft - p.width;
-            p.vx = 0;
-            if (p.isAI) p.direction = -p.direction as 1 | -1;
-          } else if (centerPrevX > shaftRight && centerCurrX <= shaftRight) {
-            p.x = shaftRight;
-            p.vx = 0;
-            if (p.isAI) p.direction = -p.direction as 1 | -1;
-          } else if (centerPrevX >= shaftLeft && centerPrevX <= shaftRight) {
-            if (centerCurrX < shaftLeft) {
-              p.x = shaftLeft;
+          if (!isElevatorAccessible) {
+            const prevX = p.x - p.vx;
+            const centerPrevX = prevX + p.width / 2;
+            const centerCurrX = p.x + p.width / 2;
+            
+            if (centerPrevX < shaftLeft && centerCurrX >= shaftLeft) {
+              p.x = shaftLeft - p.width;
               p.vx = 0;
-              if (p.isAI) p.direction = 1;
-            } else if (centerCurrX > shaftRight) {
-              p.x = shaftRight - p.width;
+              if (p.isAI) p.direction = -p.direction as 1 | -1;
+            } else if (centerPrevX > shaftRight && centerCurrX <= shaftRight) {
+              p.x = shaftRight;
               p.vx = 0;
-              if (p.isAI) p.direction = -1;
+              if (p.isAI) p.direction = -p.direction as 1 | -1;
+            } else if (centerPrevX >= shaftLeft && centerPrevX <= shaftRight) {
+              if (centerCurrX < shaftLeft) {
+                p.x = shaftLeft;
+                p.vx = 0;
+                if (p.isAI) p.direction = 1;
+              } else if (centerCurrX > shaftRight) {
+                p.x = shaftRight - p.width;
+                p.vx = 0;
+                if (p.isAI) p.direction = -1;
+              }
             }
           }
         }
@@ -1396,7 +1438,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const elevator = elevatorRef.current;
+    const elevators = elevatorsRef.current;
 
     // During the hide phase, Seeker player sees absolutely nothing (solid black canvas)
     if (isHidePhase && playerTeam === 'Seeker') {
@@ -1452,7 +1494,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         ctx.fillRect(HOUSE2_LEFT, floorY - 4, HOUSE2_WIDTH, 8); // Solid Floor 6 (Rooftop)
       }
 
-      ctx.fillRect(HOUSE3_LEFT, floorY - 4, HOUSE3_WIDTH, 8); // House 3
+      // House 3 floor lines are split by the elevator shaft (X = 1975 to 2025) for Floors 1 to 5 (idx < 5)
+      if (idx < 5) {
+        ctx.fillRect(HOUSE3_LEFT, floorY - 4, 1975 - HOUSE3_LEFT, 8);
+        ctx.fillRect(2025, floorY - 4, HOUSE3_RIGHT - 2025, 8);
+      } else {
+        ctx.fillRect(HOUSE3_LEFT, floorY - 4, HOUSE3_WIDTH, 8); // Solid Floor 6 (Rooftop)
+      }
     });
 
     // Draw Stairs/Ladders for all three houses
@@ -1483,52 +1531,62 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.stroke();
     });
 
-    // Draw vertical elevator shaft walls in House 2 (stopping at Floor 5 ceiling Y = 90)
+    // Draw vertical elevator shaft walls in House 2 and House 3 (stopping at Floor 5 ceiling Y = 90)
     ctx.strokeStyle = '#2c3e50';
     ctx.lineWidth = 4;
     ctx.beginPath();
+    // House 2 Shaft
     ctx.moveTo(1175, 90);
     ctx.lineTo(1175, 540);
     ctx.moveTo(1225, 90);
     ctx.lineTo(1225, 540);
+    // House 3 Shaft
+    ctx.moveTo(1975, 90);
+    ctx.lineTo(1975, 540);
+    ctx.moveTo(2025, 90);
+    ctx.lineTo(2025, 540);
     ctx.stroke();
 
-    // Draw elevator shaft sliding doors on Floor 1, 2, 3, 4, and 5
-    [1, 2, 3, 4, 5].forEach(floorNum => {
-      const floorY = FLOOR_HEIGHTs[floorNum - 1];
-      const isCabinPresent = elevator.floor === floorNum && elevator.state === 'waiting';
+    // Draw elevator shaft sliding doors on Floor 1, 2, 3, 4, and 5 for both elevators
+    elevators.forEach(elev => {
+      [1, 2, 3, 4, 5].forEach(floorNum => {
+        const floorY = FLOOR_HEIGHTs[floorNum - 1];
+        const isCabinPresent = elev.floor === floorNum && elev.state === 'waiting';
 
-      if (isCabinPresent) {
-        // Draw open sliding doors
-        ctx.fillStyle = '#7f8c8d';
-        ctx.fillRect(1176, floorY - 56, 8, 52);  // Left door open
-        ctx.fillRect(1216, floorY - 56, 8, 52);  // Right door open
-      } else {
-        // Draw closed sliding doors
-        ctx.fillStyle = '#95a5a6'; // closed metallic door color
-        ctx.fillRect(1176, floorY - 56, 48, 52);
-        
-        // Vertical split line
-        ctx.strokeStyle = '#7f8c8d';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(1200, floorY - 56);
-        ctx.lineTo(1200, floorY - 4);
-        ctx.stroke();
+        if (isCabinPresent) {
+          // Draw open sliding doors
+          ctx.fillStyle = '#7f8c8d';
+          ctx.fillRect(elev.x - 24, floorY - 56, 8, 52);  // Left door open
+          ctx.fillRect(elev.x + 16, floorY - 56, 8, 52);  // Right door open
+        } else {
+          // Draw closed sliding doors
+          ctx.fillStyle = '#95a5a6'; // closed metallic door color
+          ctx.fillRect(elev.x - 24, floorY - 56, 48, 52);
+          
+          // Vertical split line
+          ctx.strokeStyle = '#7f8c8d';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(elev.x, floorY - 56);
+          ctx.lineTo(elev.x, floorY - 4);
+          ctx.stroke();
 
-        // Small handles
-        ctx.fillStyle = '#2c3e50';
-        ctx.fillRect(1196, floorY - 32, 2, 12);
-        ctx.fillRect(1202, floorY - 32, 2, 12);
-      }
+          // Small handles
+          ctx.fillStyle = '#2c3e50';
+          ctx.fillRect(elev.x - 4, floorY - 32, 2, 12);
+          ctx.fillRect(elev.x + 2, floorY - 32, 2, 12);
+        }
+      });
     });
 
     // Draw elevator cables (cables hang from Floor 5 ceiling at Y = 90)
     ctx.strokeStyle = '#7f8c8d';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(1200, 90);
-    ctx.lineTo(1200, elevator.y - 60); // stops at the top of the cabin
+    elevators.forEach(elev => {
+      ctx.moveTo(elev.x, 90);
+      ctx.lineTo(elev.x, elev.y - 60); // stops at the top of the cabin
+    });
     ctx.stroke();
 
     // Define drawWallAndDoor helper for interior partitions (draws wall with empty doorway opening)
@@ -1545,32 +1603,31 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.stroke();
     };
 
-    // Draw interior room walls and open doors for House 1 and House 3 (Floors 1 to 5 only)
+    // Draw interior room walls and open doors for House 1 (Floors 1 to 5 only)
     FLOOR_HEIGHTs.forEach((floorY, idx) => {
       if (idx < 5) {
         const ceilingY = FLOOR_CEILINGS[idx];
         
         // House 1 Center Partition (X = 400)
         drawWallAndDoor(400, floorY, ceilingY);
-        
-        // House 3 Center Partition (X = 2000)
-        drawWallAndDoor(2000, floorY, ceilingY);
       }
     });
 
-    // Draw elevator cabin (a glowing metallic frame cage)
-    ctx.fillStyle = 'rgba(52, 73, 94, 0.6)'; // cabin background
-    ctx.fillRect(1176, elevator.y - 60, 48, 56);
-    
-    ctx.strokeStyle = '#00ffff'; // cyan neon frame for cabin
-    ctx.lineWidth = 3;
-    ctx.strokeRect(1176, elevator.y - 60, 48, 56);
+    // Draw elevator cabins
+    elevators.forEach(elev => {
+      ctx.fillStyle = 'rgba(52, 73, 94, 0.6)'; // cabin background
+      ctx.fillRect(elev.x - 24, elev.y - 60, 48, 56);
+      
+      ctx.strokeStyle = '#00ffff'; // cyan neon frame for cabin
+      ctx.lineWidth = 3;
+      ctx.strokeRect(elev.x - 24, elev.y - 60, 48, 56);
 
-    // Draw glowing cabin indicator light
-    ctx.fillStyle = elevator.state === 'waiting' ? '#2ecc71' : '#e74c3c'; // green if waiting, red if moving
-    ctx.beginPath();
-    ctx.arc(1200, elevator.y - 52, 4, 0, Math.PI * 2);
-    ctx.fill();
+      // Draw glowing cabin indicator light
+      ctx.fillStyle = elev.state === 'waiting' ? '#2ecc71' : '#e74c3c'; // green if waiting, red if moving
+      ctx.beginPath();
+      ctx.arc(elev.x, elev.y - 52, 4, 0, Math.PI * 2);
+      ctx.fill();
+    });
 
     // Helper function to draw a bridge
     const drawBridge = (fromX: number, toX: number, bridgeY: number) => {
