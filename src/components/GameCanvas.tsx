@@ -790,12 +790,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                   const target = availableFurniture[Math.floor(Math.random() * availableFurniture.length)];
                   p.aiTargetFurnitureId = target.id;
                 } else {
-                  // Switch floor randomly
-                  const newFloor = p.floor === 1 ? 2 : p.floor === 3 ? 2 : Math.random() > 0.5 ? 1 : 3;
+                  // Switch floor randomly (among all 4 floors)
+                  const availableFloors = [1, 2, 3, 4].filter(f => f !== p.floor);
+                  const newFloor = availableFloors[Math.floor(Math.random() * availableFloors.length)];
                   // Cheat teleport/path for AI floor transition during hide phase
                   p.floor = newFloor;
                   p.y = FLOOR_HEIGHTs[newFloor - 1] - p.height;
-                  p.x = HOUSE_LEFT + 50 + Math.random() * (HOUSE2_RIGHT - HOUSE_LEFT - 100);
+                  p.x = HOUSE_LEFT + 50 + Math.random() * (HOUSE3_RIGHT - HOUSE_LEFT - 100);
                 }
               }
 
@@ -832,8 +833,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 p.x = HOUSE_LEFT;
                 p.direction = 1;
               }
-              if (p.x + p.width > HOUSE2_RIGHT) {
-                p.x = HOUSE2_RIGHT - p.width;
+              if (p.x + p.width > HOUSE3_RIGHT) {
+                p.x = HOUSE3_RIGHT - p.width;
                 p.direction = -1;
               }
 
@@ -1022,7 +1023,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               // ==========================================
               // Stochastic floor change check
               if (p.targetFloor === null && Math.random() < 0.003) {
-                const availableFloors = [1, 2, 3].filter(f => f !== p.floor);
+                const availableFloors = [1, 2, 3, 4].filter(f => f !== p.floor);
                 p.targetFloor = availableFloors[Math.floor(Math.random() * availableFloors.length)];
               }
 
@@ -1053,17 +1054,20 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                   p.x += p.vx;
 
                   let minX = HOUSE_LEFT - 30;
-                  let maxX = HOUSE2_RIGHT + 50;
+                  let maxX = HOUSE3_RIGHT + 50;
 
                   if (p.floor === 1) {
-                    minX = HOUSE_LEFT - 30;
-                    maxX = HOUSE2_RIGHT + 50;
+                    minX = 20;
+                    maxX = CANVAS_WIDTH - 20;
                   } else if (p.floor === 2) {
                     minX = HOUSE_LEFT;
-                    maxX = HOUSE2_RIGHT + 50;
+                    maxX = HOUSE3_RIGHT + 50;
                   } else if (p.floor === 3) {
                     minX = HOUSE_LEFT;
-                    maxX = HOUSE2_RIGHT;
+                    maxX = HOUSE3_RIGHT;
+                  } else if (p.floor === 4) {
+                    minX = HOUSE_LEFT;
+                    maxX = HOUSE3_RIGHT;
                   }
 
                   if (p.x < minX) {
