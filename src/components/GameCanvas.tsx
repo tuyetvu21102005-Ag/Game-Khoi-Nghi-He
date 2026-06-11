@@ -688,8 +688,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       if (p.state === 'eliminated') return;
 
       if (!p.isAI) {
-        // Human Player Movement Logic
-        let speed = 5.0;
+        // Human Player Movement Logic (speed boosted from 5.0 to 7.5)
+        let speed = 7.5;
         p.vx = 0;
 
         // Seeker players are locked outside during the 20-second hiding phase
@@ -764,12 +764,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           if (onStair) {
             if (goUp) {
               if (p.floor === targetStair.fromFloor) {
-                p.vy = -3;
+                p.vy = -4.5;
                 p.isCamo = false;
               }
             } else if (goDown) {
               if (p.floor === targetStair.toFloor) {
-                p.vy = 3;
+                p.vy = 4.5;
                 p.isCamo = false;
               }
             } else {
@@ -871,7 +871,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                   const dx = targetX - p.x;
 
                   if (Math.abs(dx) > 5) {
-                    p.vx = Math.sign(dx) * 2.5;
+                    p.vx = Math.sign(dx) * 3.8;
                     p.direction = p.vx > 0 ? 1 : -1;
                     p.x += p.vx;
                   } else {
@@ -888,7 +888,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             // Main round action phase: AI Hiders stay camouflaged.
             // If they are not camouflaged (spotted earlier), they try to flee to another floor!
             if (!p.isCamo) {
-              p.vx = p.direction * 1.5;
+              p.vx = p.direction * 2.5;
               p.x += p.vx;
 
               // Bounce off walls
@@ -1020,7 +1020,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 if (stair) {
                   const dx = stair.x - (p.x + p.width / 2);
                   if (Math.abs(dx) > 15) {
-                    p.vx = Math.sign(dx) * 4.2; // Chase speed
+                    p.vx = Math.sign(dx) * 6.3; // Chase speed
                     p.direction = p.vx > 0 ? 1 : -1;
                     p.x += p.vx;
                   } else {
@@ -1037,7 +1037,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 // Same floor tracking
                 const dx = target.x - p.x;
                 if (Math.abs(dx) > 40) {
-                  p.vx = Math.sign(dx) * 4.2;
+                  p.vx = Math.sign(dx) * 6.3;
                   p.direction = p.vx > 0 ? 1 : -1;
                   p.x += p.vx;
                 } else {
@@ -1052,7 +1052,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               // ==========================================
               const dx = p.investigateTargetX - (p.x + p.width / 2);
               if (Math.abs(dx) > 20) {
-                p.vx = Math.sign(dx) * 1.8;
+                p.vx = Math.sign(dx) * 3.0;
                 p.direction = p.vx > 0 ? 1 : -1;
                 p.x += p.vx;
               } else {
@@ -1095,7 +1095,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 if (stair) {
                   const dx = stair.x - (p.x + p.width / 2);
                   if (Math.abs(dx) > 15) {
-                    p.vx = Math.sign(dx) * 3.2;
+                    p.vx = Math.sign(dx) * 4.8;
                     p.direction = p.vx > 0 ? 1 : -1;
                     p.x += p.vx;
                   } else {
@@ -1112,7 +1112,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 }
               } else {
                 if (p.aiWaitTimer <= 0) {
-                  const speed = 3.2;
+                  const speed = 4.8;
                   p.vx = p.direction * speed;
                   p.x += p.vx;
 
